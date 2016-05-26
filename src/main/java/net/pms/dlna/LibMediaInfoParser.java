@@ -107,9 +107,15 @@ public class LibMediaInfoParser {
 							currentSubTrack.setId(media.getSubtitleTracksList().size());
 							addSub(currentSubTrack, media);
 						} else {
+<<<<<<< Upstream, based on origin/master
 							getFormat(video, media, currentAudioTrack, MI.Get(video, i, "Format"), file);
 							getFormat(video, media, currentAudioTrack, MI.Get(video, i, "Format_Version"), file);
 							getFormat(video, media, currentAudioTrack, MI.Get(video, i, "CodecID"), file);
+=======
+							getFormat(video, media, currentAudioTrack, MI.Get(video, i, "Format").toLowerCase(), file);
+							getFormat(video, media, currentAudioTrack, MI.Get(video, i, "Format_Version").toLowerCase(), file);
+							getFormat(video, media, currentAudioTrack, MI.Get(video, i, "CodecID").toLowerCase(), file);
+>>>>>>> e62dccc Fixed MPEG1 video format detection.
 							media.setWidth(getPixelValue(MI.Get(video, i, "Width")));
 							media.setHeight(getPixelValue(MI.Get(video, i, "Height")));
 							media.setMatrixCoefficients(MI.Get(video, i, "matrix_coefficients"));
