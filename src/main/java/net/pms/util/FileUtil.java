@@ -817,6 +817,11 @@ public class FileUtil {
 			media.setExternalSubsParsed(true);
 		}
 
+		if (media != null) {
+			media.setExternalSubsExist(found);
+			media.setExternalSubsParsed(true);
+		}
+
 		return found;
 	}
 
