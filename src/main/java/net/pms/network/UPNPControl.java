@@ -335,9 +335,9 @@ public class UPNPControl {
 	private static Thread searchThread;
 
 	/**
-	 * Find all media renderers on the network
+	 * Runs a Cling search every 10/20/30 seconds to discover new renderers.
 	 */
-	public void search() {
+	public void initializeSearcher() {
 		Runnable rSearch = new Runnable() {
 			@Override
 			public void run() {
