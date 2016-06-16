@@ -331,6 +331,50 @@ public class UPNPControl {
 		}
 	}
 
+	private static int search_delay = 10000;
+	private static Thread searchThread;
+
+	/**
+	 * Find all media renderers on the network
+	 */
+	public void search() {
+		Runnable rSearch = new Runnable() {
+			@Override
+			public void run() {
+				while (true) {
+					sleep(search_delay);
+					for (DeviceType t : mediaRendererTypes) {
+						upnpService.getControlPoint().search(new DeviceTypeHeader(t));
+					}
+					LOGGER.trace("Searching for renderers with Cling...");
+
+					/**
+					 * The first delay for sending a search message is 10 seconds,
+					 * the second delay is for 20 seconds. From then on, all other
+					 * delays are 30 seconds.
+					 */
+					switch (search_delay) {
+						case 10000:
+							search_delay = 20000;
+							break;
+						case 20000:
+							if (PMS.get().getFoundRenderers().size() > 0) {
+								search_delay = 30000;
+							} else {
+								search_delay = 10000;
+							}
+							break;
+						default:
+							break;
+					}
+				}
+			}
+		};
+
+		searchThread = new Thread(rSearch, "UPNP-Search");
+		searchThread.start();
+	}
+
 	public void shutdown() {
 		new Thread(new Runnable() {
 			@Override
@@ -338,6 +382,9 @@ public class UPNPControl {
 				if (upnpService != null) {
 					LOGGER.debug("Stopping UPNP Services...");
 					upnpService.shutdown();
+				}
+				if (searchThread != null) {
+					searchThread.interrupt();
 				}
 			}
 		}).start();
