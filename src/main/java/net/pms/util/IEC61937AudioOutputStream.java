@@ -17,6 +17,7 @@ package net.pms.util;
 import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.pms.configuration.RendererConfiguration;
 
 public class IEC61937AudioOutputStream extends FlowParserOutputStream {
 	private static final Logger LOGGER = LoggerFactory.getLogger(IEC61937AudioOutputStream.class);
