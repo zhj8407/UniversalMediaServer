@@ -3245,6 +3245,7 @@ public abstract class DLNAResource extends HTTPResource implements Cloneable, Ru
 			thumb = format.getIcon();
 		}
 
+		InputStream is;
 		// Thumb could be:
 		if (thumb != null && isCodeValid(this)) {
 			// A local file
@@ -3253,7 +3254,6 @@ public abstract class DLNAResource extends HTTPResource implements Cloneable, Ru
 			}
 
 			// A jar resource
-			InputStream is;
 			if ((is = getResourceInputStream(thumb)) != null) {
 				return is;
 			}
@@ -3262,6 +3262,17 @@ public abstract class DLNAResource extends HTTPResource implements Cloneable, Ru
 			try {
 				return downloadAndSend(thumb, true);
 			} catch (Exception e) {}
+		}
+
+		// use generic images for media whose don't provide thumbnails when exists in resources/images/ folder
+		if (defaultRenderer != null && defaultRenderer.isForceJPGThumbnails()) { 
+			if ((is = getResourceInputStream("images/formats/" + format + ".jpg")) != null) {
+				return is;
+			}
+		} else {
+			if ((is = getResourceInputStream("images/formats/" + format + ".png")) != null) {
+				return is;
+			}
 		}
 
 		// Or none of the above
