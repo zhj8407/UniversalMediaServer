@@ -18,6 +18,7 @@
  */
 package net.pms.dlna;
 
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.URLDecoder;
@@ -3264,13 +3265,21 @@ public abstract class DLNAResource extends HTTPResource implements Cloneable, Ru
 			} catch (Exception e) {}
 		}
 
-		// use generic images for media whose don't provide thumbnails when exists in resources/images/ folder
-		if (defaultRenderer != null && defaultRenderer.isForceJPGThumbnails()) { 
-			if ((is = getResourceInputStream("images/formats/" + format + ".jpg")) != null) {
-				return is;
+		if (media != null) {
+			BufferedImage bi;
+			if (media.isAudio()) {
+				bi = PMS.getGenericAudioIcon();
+			} else if (media.isImage()) {
+				bi = PMS.getGenericImageIcon();
+			} else if (media.isVideo()) {
+				bi = PMS.getGenericVideoIcon();
+			} else {
+				bi = PMS.getGenericUnknownIcon();
 			}
-		} else {
-			if ((is = getResourceInputStream("images/formats/" + format + ".png")) != null) {
+
+			is = ImagesUtil.addFormatLabelToImage(bi, media.getContainer(), defaultRenderer != null && defaultRenderer.isForceJPGThumbnails() ? "jpeg" : "png");
+			if (is != null) {
+				LOGGER.trace("Created default thumbnail/icon for the media: {}", getName());
 				return is;
 			}
 		}
