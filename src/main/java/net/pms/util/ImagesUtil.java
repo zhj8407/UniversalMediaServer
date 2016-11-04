@@ -12,6 +12,7 @@ import mediautil.gen.Log;
 import mediautil.image.jpeg.LLJTran;
 import mediautil.image.jpeg.LLJTranException;
 import net.pms.configuration.FormatConfiguration;
+import net.pms.configuration.RendererConfiguration;
 import net.pms.dlna.DLNAMediaInfo;
 import org.apache.commons.imaging.ImageInfo;
 import org.apache.commons.imaging.ImageReadException;
@@ -153,26 +154,39 @@ public class ImagesUtil {
 		}
 	}
 
-	public static InputStream addFormatLabelToImage(BufferedImage image, String label, String outputImageFormat) throws IOException {
+	/**
+	 * Add the format(container) name of the media to the generic icon image.
+	 *
+	 * @param image BufferdImage to be the label added
+	 * @param label the media container name to be added as an label
+	 * @param renderer the renderer configuration
+	 * 
+	 * @return the generic icon with the container label added and scaled in accordance with renderer setting
+	 */
+	public static InputStream addFormatLabelToImage(BufferedImage image, String label, RendererConfiguration renderer) throws IOException {
 		// copy image to not affect the original one
 		ColorModel cm = image.getColorModel();
 		BufferedImage img = new BufferedImage(cm, image.copyData(null), cm.isAlphaPremultiplied(), null);
 
 		Graphics2D g = img.createGraphics();
+		g.drawImage(img, 0, 0, null);
 		g.setColor(Color.WHITE);
-		if ("jpeg".equals(outputImageFormat)) {
-			g.drawImage(img, 0, 0, 120, 120, null);
-			g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
-			g.drawString(label.toUpperCase(), 30, 30);
-		} else {
-			g.drawImage(img, 0, 0, null);
-			g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 36));
-			g.drawString(label.toUpperCase(), 62, 62);
+		g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 36));
+		g.drawString(label.toUpperCase(), 62, 62);
+		// XXX Is it necessary to use jpeg thumbnail-video with size 120x120 like it is used in the DLNAResource.getGenericThumbnailInputStream() method?
+		if (renderer != null) {
+			g.scale(renderer.getThumbnailWidth() / img.getWidth(), renderer.getThumbnailHeight() / img.getHeight());
 		}
-		
+
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		ImageIO.write(img, outputImageFormat, out);
+		ImageIO.write(img, "png", out);
 		g.dispose();
+		if (renderer != null && renderer.isForceJPGThumbnails()) {
+			// XXX what is correct? To make jpeg thumbnail size 120x120 pixels like it is used for the "thumbnail-video" image or to resize image to the size defined in the renderer.conf?
+//			return new ByteArrayInputStream(UMSUtils.scaleImage(out.toByteArray(), renderer.getThumbnailWidth(), renderer.getThumbnailHeight(), false, renderer, "JPEG"));
+			return new ByteArrayInputStream(UMSUtils.scaleImage(out.toByteArray(), 120, 120, false, renderer, "JPEG"));
+		}
+
 		return new ByteArrayInputStream(out.toByteArray());
 	}
 }

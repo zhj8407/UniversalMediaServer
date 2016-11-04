@@ -3277,7 +3277,7 @@ public abstract class DLNAResource extends HTTPResource implements Cloneable, Ru
 				bi = PMS.getGenericUnknownIcon();
 			}
 
-			is = ImagesUtil.addFormatLabelToImage(bi, media.getContainer(), defaultRenderer != null && defaultRenderer.isForceJPGThumbnails() ? "jpeg" : "png");
+			is = ImagesUtil.addFormatLabelToImage(bi, media.getContainer(), defaultRenderer);
 			if (is != null) {
 				LOGGER.trace("Created default thumbnail/icon for the media: {}", getName());
 				return is;

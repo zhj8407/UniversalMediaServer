@@ -592,7 +592,7 @@ public class UMSUtils {
 	 * @deprecated
 	 */
 	public static byte[] scaleImage(byte[] image, int width, int height, boolean outputBlank) {
-		return scaleImage(image, width, height, outputBlank, null);
+		return scaleImage(image, width, height, outputBlank, null, "PNG");
 	}
 
 	/**
@@ -608,7 +608,7 @@ public class UMSUtils {
 	 *
 	 * @return the scaled image
 	 */
-	public static byte[] scaleImage(byte[] image, int width, int height, boolean outputBlank, RendererConfiguration renderer) {
+	public static byte[] scaleImage(byte[] image, int width, int height, boolean outputBlank, RendererConfiguration renderer, String format) {
 		ByteArrayInputStream in = null;
 		if (image == null && !outputBlank) {
 			return null;
@@ -633,13 +633,13 @@ public class UMSUtils {
 				Thumbnails.of(img)
 					.size(width, height)
 					.addFilter(new Canvas(width, height, Positions.CENTER, Color.BLACK))
-					.outputFormat("JPEG")
+					.outputFormat(format)
 					.outputQuality(1.0f)
 					.toOutputStream(out);
 			} else {
 				Thumbnails.of(img)
 					.size(width, height)
-					.outputFormat("JPEG")
+					.outputFormat(format)
 					.outputQuality(1.0f)
 					.toOutputStream(out);
 			}
