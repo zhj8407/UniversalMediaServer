@@ -39,7 +39,6 @@ import net.pms.util.ImagesUtil;
 import net.pms.util.MpegUtil;
 import net.pms.util.ProcessUtil;
 import static net.pms.util.StringUtil.*;
-import net.pms.util.UMSUtils;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import org.apache.commons.imaging.ImageInfo.ColorType;
@@ -828,7 +827,7 @@ public class DLNAMediaInfo implements Cloneable {
 
 							// Make sure the image fits in the renderer's bounds
 							boolean isFullyPlayedThumbnail = FullyPlayed.isFullyPlayedThumbnail(file);
-							thumb = UMSUtils.scaleImage(thumb, thumbnailWidth, thumbnailHeight, isFullyPlayedThumbnail, renderer, "JPEG");
+							thumb = ImagesUtil.scaleImage(thumb, thumbnailWidth, thumbnailHeight, isFullyPlayedThumbnail, renderer, "JPEG");
 
 							if (isFullyPlayedThumbnail) {
 								thumb = FullyPlayed.addFullyPlayedOverlay(thumb, MediaType.AUDIO);
@@ -876,7 +875,7 @@ public class DLNAMediaInfo implements Cloneable {
 
 						// Make sure the image fits in the renderer's bounds
 						boolean isFullyPlayedThumbnail = FullyPlayed.isFullyPlayedThumbnail(file);
-						thumb = UMSUtils.scaleImage(Files.readAllBytes(file.toPath()), thumbnailWidth, thumbnailHeight, isFullyPlayedThumbnail, renderer, "JPEG");
+						thumb = ImagesUtil.scaleImage(Files.readAllBytes(file.toPath()), thumbnailWidth, thumbnailHeight, isFullyPlayedThumbnail, renderer, "JPEG");
 
 						if (isFullyPlayedThumbnail) {
 							thumb = FullyPlayed.addFullyPlayedOverlay(thumb, MediaType.IMAGE);
@@ -983,7 +982,7 @@ public class DLNAMediaInfo implements Cloneable {
 
 					// Make sure the image fits in the renderer's bounds
 					boolean isFullyPlayedThumbnail = FullyPlayed.isFullyPlayedThumbnail(file);
-					thumb = UMSUtils.scaleImage(thumb, renderer.getThumbnailWidth(), renderer.getThumbnailHeight(), isFullyPlayedThumbnail, renderer, "JPEG");
+					thumb = ImagesUtil.scaleImage(thumb, renderer.getThumbnailWidth(), renderer.getThumbnailHeight(), isFullyPlayedThumbnail, renderer, "JPEG");
 
 					if (isFullyPlayedThumbnail) {
 						thumb = FullyPlayed.addFullyPlayedOverlay(thumb, MediaType.VIDEO);

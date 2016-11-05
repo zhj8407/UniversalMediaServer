@@ -10,6 +10,9 @@ import javax.imageio.ImageIO;
 import mediautil.gen.Log;
 import mediautil.image.jpeg.LLJTran;
 import mediautil.image.jpeg.LLJTranException;
+import net.coobird.thumbnailator.Thumbnails;
+import net.coobird.thumbnailator.filters.Canvas;
+import net.coobird.thumbnailator.geometry.Positions;
 import net.pms.configuration.FormatConfiguration;
 import net.pms.configuration.RendererConfiguration;
 import net.pms.dlna.DLNAMediaInfo;
@@ -182,10 +185,68 @@ public class ImagesUtil {
 		g.dispose();
 		if (renderer != null && renderer.isForceJPGThumbnails()) {
 			// XXX what is correct? To make jpeg thumbnail size 120x120 pixels like it is used for the "thumbnail-video" image or to resize image to the size defined in the renderer.conf?
-//			return new ByteArrayInputStream(UMSUtils.scaleImage(out.toByteArray(), renderer.getThumbnailWidth(), renderer.getThumbnailHeight(), false, renderer, "JPEG"));
-			return new ByteArrayInputStream(UMSUtils.scaleImage(out.toByteArray(), 120, 120, false, renderer, "JPEG"));
+//			return new ByteArrayInputStream(scaleImage(out.toByteArray(), renderer.getThumbnailWidth(), renderer.getThumbnailHeight(), false, renderer, "JPEG"));
+			return new ByteArrayInputStream(scaleImage(out.toByteArray(), 120, 120, false, renderer, "JPEG"));
 		}
 
 		return new ByteArrayInputStream(out.toByteArray());
+	}
+
+	/**
+	 * Creates a black background with the exact dimensions specified, then
+	 * centers the image on the background, preserving the aspect ratio.
+	 *
+	 * @param image
+	 * @param width
+	 * @param height
+	 * @param outputBlank whether to return null or a black image when the
+	 *                    image parameter is null
+	 * @param renderer
+	 *
+	 * @return the scaled image
+	 */
+	public static byte[] scaleImage(byte[] image, int width, int height, boolean outputBlank, RendererConfiguration renderer, String format) {
+		ByteArrayInputStream in = null;
+		if (image == null && !outputBlank) {
+			return null;
+		} else if (image != null) {
+			in = new ByteArrayInputStream(image);
+		}
+
+		try {
+			BufferedImage img;
+			if (in != null) {
+				img = ImageIO.read(in);
+			} else {
+				img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+			}
+
+			if (img == null) { // ImageIO doesn't support the image format
+				return null;
+			}
+
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			if (renderer != null && renderer.isThumbnailPadding()) {
+				Thumbnails.of(img)
+					.size(width, height)
+					.addFilter(new Canvas(width, height, Positions.CENTER, Color.BLACK))
+					.outputFormat(format)
+					.outputQuality(1.0f)
+					.toOutputStream(out);
+			} else {
+				Thumbnails.of(img)
+					.size(width, height)
+					.outputFormat(format)
+					.outputQuality(1.0f)
+					.toOutputStream(out);
+			}
+
+			return out.toByteArray();
+		} catch (IOException e) {
+			LOGGER.debug("Failed to resize image: {}", e.getMessage());
+			LOGGER.trace("", e);
+		}
+
+		return null;
 	}
 }
