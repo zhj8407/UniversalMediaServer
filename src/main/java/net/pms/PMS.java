@@ -87,10 +87,10 @@ public class PMS {
 	private static final String TRACE = "trace";
 	public static final String NAME = "Universal Media Server";
 	public static final String CROWDIN_LINK = "https://crowdin.com/project/universalmediaserver";
-	private static BufferedImage genericAudioIcon;
-	private static BufferedImage genericImageIcon;
-	private static BufferedImage genericVideoIcon;
-	private static BufferedImage genericUnknownIcon;
+	private BufferedImage genericAudioIcon;
+	private BufferedImage genericImageIcon;
+	private BufferedImage genericVideoIcon;
+	private BufferedImage genericUnknownIcon;
 
 	/**
 	 * @deprecated The version has moved to the resources/project.properties file. Use {@link #getVersion()} instead.
@@ -1959,18 +1959,18 @@ public class PMS {
 	}
 
 	public static BufferedImage getGenericAudioIcon() {
-		return genericAudioIcon;
+		return instance.genericAudioIcon;
 	}
 
 	public static BufferedImage getGenericImageIcon() {
-		return genericImageIcon;
+		return instance.genericImageIcon;
 	}
 
 	public static BufferedImage getGenericVideoIcon() {
-		return genericVideoIcon;
+		return instance.genericVideoIcon;
 	}
 
 	public static BufferedImage getGenericUnknownIcon() {
-		return genericUnknownIcon;
+		return instance.genericUnknownIcon;
 	}
 }

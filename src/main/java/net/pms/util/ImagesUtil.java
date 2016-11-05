@@ -5,7 +5,6 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
-import java.awt.image.WritableRaster;
 import java.io.*;
 import javax.imageio.ImageIO;
 import mediautil.gen.Log;
