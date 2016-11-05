@@ -174,7 +174,7 @@ public class ImagesUtil {
 		g.drawImage(img, 0, 0, null);
 		g.setColor(Color.WHITE);
 		g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 36));
-		g.drawString(label.toUpperCase(), 62, 62);
+		g.drawString(label.toUpperCase(), 51, 62);
 		// XXX Is it necessary to use jpeg thumbnail-video with size 120x120 like it is used in the DLNAResource.getGenericThumbnailInputStream() method?
 		if (renderer != null) {
 			g.scale(renderer.getThumbnailWidth() / img.getWidth(), renderer.getThumbnailHeight() / img.getHeight());
