@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.pms.PMS;
-import net.pms.configuration.FormatConfiguration;
 import net.pms.configuration.PmsConfiguration;
 import net.pms.configuration.RendererConfiguration;
 import net.pms.formats.AudioAsVideo;
@@ -1035,11 +1034,6 @@ public class DLNAMediaInfo implements Cloneable {
 							container = line.substring(line.lastIndexOf('.') + 1, line.lastIndexOf('\'')).trim();
 							LOGGER.trace("Setting container to " + container + " from the filename. To prevent false-positives, use MediaInfo=true in the renderer config.");
 						}
-
-						if ("matroska".equals(container)) {
-							container = FormatConfiguration.MATROSKA;
-						}
-
 					} else {
 						matches = false;
 					}

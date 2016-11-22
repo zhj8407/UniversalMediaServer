@@ -18,7 +18,6 @@
  */
 package net.pms.dlna;
 
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.URLDecoder;
@@ -3265,38 +3264,18 @@ public abstract class DLNAResource extends HTTPResource implements Cloneable, Ru
 			} catch (Exception e) {}
 		}
 
-		if (media != null) {
-			BufferedImage bi;
-			if (media.isAudio()) {
-				bi = PMS.getGenericAudioIcon();
-			} else if (media.isImage()) {
-				bi = PMS.getGenericImageIcon();
-			} else if (media.isVideo()) {
-				bi = PMS.getGenericVideoIcon();
-			} else {
-				bi = PMS.getGenericUnknownIcon();
-			}
-
-			is = ImagesUtil.addFormatLabelToImage(bi, media.getContainer(), defaultRenderer);
-			if (is != null) {
-				LOGGER.trace("Created default thumbnail/icon for the media: {}", getName());
-				return is;
-			}
-		}
-
 		// Or none of the above
-		String defaultThumbnailImage = "images/thumbnail-video-256.png";
-		if (isFolder()) {
+		if (!isFolder()) {
+			return GenericIcons.INSTANCE.getGenericIcon(media, defaultRenderer);
+		} else {
+			String defaultThumbnailImage = null;
 			defaultThumbnailImage = "images/thumbnail-folder-256.png";
 			if (defaultRenderer != null && defaultRenderer.isForceJPGThumbnails()) {
 				defaultThumbnailImage = "images/thumbnail-folder-120.jpg";
 			}
-		} else if (defaultRenderer != null && defaultRenderer.isForceJPGThumbnails()) {
-			defaultThumbnailImage = "images/thumbnail-video-120.jpg";
+			LOGGER.trace("Using default thumbnail {}", defaultThumbnailImage);
+			return getResourceInputStream(defaultThumbnailImage);
 		}
-
-		LOGGER.debug("use def thumb " + defaultThumbnailImage);
-		return getResourceInputStream(defaultThumbnailImage);
 	}
 
 	/**

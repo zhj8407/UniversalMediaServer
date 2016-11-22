@@ -1,10 +1,7 @@
 package net.pms.util;
 
 import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
 import java.io.*;
 import javax.imageio.ImageIO;
 import mediautil.gen.Log;
@@ -102,13 +99,13 @@ public class ImagesUtil {
 	}
 
 	/**
-	 * This method populates the supplied {@link DLNAMediaInfo} object with some of the image data 
+	 * This method populates the supplied {@link DLNAMediaInfo} object with some of the image data
 	 * (WIDTH, HEIGHT, BITSPERPIXEL, COLORTYPE, MODEL, EXPOSURE TIME, ORIENTATION and ISO).
 	 *
 	 * @param file The image file to be parsed
 	 * @param media The Imaging metadata which will be populated
-	 * @throws ImageReadException 
-	 * @throws IOException 
+	 * @throws ImageReadException
+	 * @throws IOException
 	 */
 	public static void parseImageByImaging(File file, DLNAMediaInfo media) throws ImageReadException, IOException {
 		ImageInfo info = Imaging.getImageInfo(file);
@@ -154,42 +151,6 @@ public class ImagesUtil {
 		} else if (formatName.startsWith("TIF")) {
 			media.setCodecV(FormatConfiguration.TIFF);
 		}
-	}
-
-	/**
-	 * Add the format(container) name of the media to the generic icon image.
-	 *
-	 * @param image BufferdImage to be the label added
-	 * @param label the media container name to be added as an label
-	 * @param renderer the renderer configuration
-	 * 
-	 * @return the generic icon with the container label added and scaled in accordance with renderer setting
-	 */
-	public static InputStream addFormatLabelToImage(BufferedImage image, String label, RendererConfiguration renderer) throws IOException {
-		// copy image to not affect the original one
-		ColorModel cm = image.getColorModel();
-		BufferedImage img = new BufferedImage(cm, image.copyData(null), cm.isAlphaPremultiplied(), null);
-
-		Graphics2D g = img.createGraphics();
-		g.drawImage(img, 0, 0, null);
-		g.setColor(Color.WHITE);
-		g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 36));
-		g.drawString(label.toUpperCase(), 51, 62);
-		// XXX Is it necessary to use jpeg thumbnail-video with size 120x120 like it is used in the DLNAResource.getGenericThumbnailInputStream() method?
-		if (renderer != null) {
-			g.scale(renderer.getThumbnailWidth() / img.getWidth(), renderer.getThumbnailHeight() / img.getHeight());
-		}
-
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		ImageIO.write(img, "png", out);
-		g.dispose();
-		if (renderer != null && renderer.isForceJPGThumbnails()) {
-			// XXX what is correct? To make jpeg thumbnail size 120x120 pixels like it is used for the "thumbnail-video" image or to resize image to the size defined in the renderer.conf?
-//			return new ByteArrayInputStream(scaleImage(out.toByteArray(), renderer.getThumbnailWidth(), renderer.getThumbnailHeight(), false, renderer, "JPEG"));
-			return new ByteArrayInputStream(scaleImage(out.toByteArray(), 120, 120, false, renderer, "JPEG"));
-		}
-
-		return new ByteArrayInputStream(out.toByteArray());
 	}
 
 	/**

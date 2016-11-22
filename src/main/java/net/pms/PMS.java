@@ -87,10 +87,6 @@ public class PMS {
 	private static final String TRACE = "trace";
 	public static final String NAME = "Universal Media Server";
 	public static final String CROWDIN_LINK = "https://crowdin.com/project/universalmediaserver";
-	private BufferedImage genericAudioIcon;
-	private BufferedImage genericImageIcon;
-	private BufferedImage genericVideoIcon;
-	private BufferedImage genericUnknownIcon;
 
 	/**
 	 * @deprecated The version has moved to the resources/project.properties file. Use {@link #getVersion()} instead.
@@ -256,12 +252,6 @@ public class PMS {
 	public SystemUtils getRegistry() {
 		return registry;
 	}
-
-	/**
-	 * @see System#err
-	 */
-	@SuppressWarnings("unused")
-	private final PrintStream stderr = System.err;
 
 	/**
 	 * Main resource database that supports search capabilities. Also known as media cache.
@@ -629,28 +619,6 @@ public class PMS {
 
 		// Make sure buffer is destroyed
 		outputParams.cleanup = true;
-
-		InputStream is;
-		ClassLoader cl = this.getClass().getClassLoader();
-		is = cl.getResourceAsStream("resources/images/formats/audio.png");
-		if (is != null) {
-			genericAudioIcon = ImageIO.read(is);
-		}
-
-		is = cl.getResourceAsStream("resources/images/formats/image.png");
-		if (is != null) {
-			genericImageIcon = ImageIO.read(is);
-		}
-
-		is = cl.getResourceAsStream("resources/images/formats/video.png");
-		if (is != null) {
-			genericVideoIcon = ImageIO.read(is);
-		}
-
-		is = cl.getResourceAsStream("resources/images/formats/unknown.png");
-		if (is != null) {
-			genericUnknownIcon = ImageIO.read(is);
-		}
 
 		// Initialize MPlayer and FFmpeg to let them generate fontconfig cache/s
 		if (!configuration.isDisableSubtitles()) {
@@ -1956,21 +1924,5 @@ public class PMS {
 
 	public static void setKey(String key, String val) {
 		instance.keysDb.set(key, val);
-	}
-
-	public static BufferedImage getGenericAudioIcon() {
-		return instance.genericAudioIcon;
-	}
-
-	public static BufferedImage getGenericImageIcon() {
-		return instance.genericImageIcon;
-	}
-
-	public static BufferedImage getGenericVideoIcon() {
-		return instance.genericVideoIcon;
-	}
-
-	public static BufferedImage getGenericUnknownIcon() {
-		return instance.genericUnknownIcon;
 	}
 }
