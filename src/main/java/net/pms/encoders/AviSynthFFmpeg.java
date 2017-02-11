@@ -333,7 +333,11 @@ public class AviSynthFFmpeg extends FFMpegVideo {
 		// Check whether the subtitle actually has a language defined,
 		// uninitialized DLNAMediaSubtitle objects have a null language.
 		if (subtitle != null && subtitle.getLang() != null) {
-			// The resource needs a subtitle, but this engine implementation does not support subtitles yet
+			// This engine only supports external subtitles
+			if (subtitle.getExternalFile() != null) {
+				return true;
+			}
+
 			return false;
 		}
 
