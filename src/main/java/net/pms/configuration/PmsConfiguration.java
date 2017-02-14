@@ -130,6 +130,7 @@ public class PmsConfiguration extends RendererConfiguration {
 	protected static final String KEY_DISABLE_FAKESIZE = "disable_fakesize";
 	public    static final String KEY_DISABLE_SUBTITLES = "disable_subtitles";
 	protected static final String KEY_DISABLE_TRANSCODE_FOR_EXTENSIONS = "disable_transcode_for_extensions";
+	protected static final String KEY_DISABLE_TRANSCODING = "disable_transcoding";
 	protected static final String KEY_DVDISO_THUMBNAILS = "dvd_isos_thumbnails";
 	protected static final String KEY_DYNAMIC_PLS = "dynamic_playlist";
 	protected static final String KEY_DYNAMIC_PLS_AUTO_SAVE = "dynamic_playlist_auto_save";
@@ -366,6 +367,7 @@ public class PmsConfiguration extends RendererConfiguration {
 			KEY_AUDIO_THUMBNAILS_METHOD,
 			KEY_CHAPTER_SUPPORT,
 			KEY_DISABLE_TRANSCODE_FOR_EXTENSIONS,
+			KEY_DISABLE_TRANSCODING,
 			KEY_ENGINES,
 			KEY_FOLDERS,
 			KEY_FORCE_TRANSCODE_FOR_EXTENSIONS,
@@ -536,9 +538,8 @@ public class PmsConfiguration extends RendererConfiguration {
 	 * @param loadFile Set to true to attempt to load the PMS configuration
 	 *                 file from the profile path. Set to false to skip
 	 *                 loading.
-	 * @throws org.apache.commons.configuration.ConfigurationException
 	 */
-	public PmsConfiguration(boolean loadFile) throws ConfigurationException {
+	public PmsConfiguration(boolean loadFile) {
 		super(0);
 
 		if (loadFile) {
@@ -2378,6 +2379,10 @@ public class PmsConfiguration extends RendererConfiguration {
 		configuration.setProperty(KEY_DISABLE_TRANSCODE_FOR_EXTENSIONS, value);
 	}
 
+	public boolean isDisableTranscoding() {
+		return getBoolean(KEY_DISABLE_TRANSCODING, false);
+	}
+
 	public String getForceTranscodeForExtensions() {
 		return getString(KEY_FORCE_TRANSCODE_FOR_EXTENSIONS, "");
 	}
@@ -2802,12 +2807,12 @@ public class PmsConfiguration extends RendererConfiguration {
 		configuration.setProperty(KEY_CHAPTER_INTERVAL, value);
 	}
 
-	public int getSubsColor() {
-		return getInt(KEY_SUBS_COLOR, 0xffffffff);
+	public String getSubsColor() {
+		return getString(KEY_SUBS_COLOR, "0xffffffff").substring(2);
 	}
 
-	public void setSubsColor(int value) {
-		configuration.setProperty(KEY_SUBS_COLOR, value);
+	public void setSubsColor(String value) {
+		configuration.setProperty(KEY_SUBS_COLOR, "0x" + value);
 	}
 
 	public boolean isFix25FPSAvMismatch() {

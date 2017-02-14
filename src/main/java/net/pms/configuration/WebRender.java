@@ -81,6 +81,8 @@ public class WebRender extends DeviceConfiguration implements RendererConfigurat
 	protected static final int XBOX1 = 6;
 	protected static final int OPERA = 7;
 	protected static final int EDGE = 8;
+	protected static final int CHROMIUM = 9;
+	protected static final int VIVALDI = 10;
 
 	private StartStopListenerDelegate startStop;
 
@@ -110,7 +112,10 @@ public class WebRender extends DeviceConfiguration implements RendererConfigurat
 		configuration.addProperty(SUPPORTED, "f:flv v:h264|hls a:aac m:video/flash");
 		configuration.addProperty(SUPPORTED, "f:mp4 m:video/mp4");
 		configuration.addProperty(SUPPORTED, "f:mp3 n:2 m:audio/mpeg");
-//		configuration.addProperty(SUPPORTED, "f:wav n:2 m:audio/wav");
+		configuration.addProperty(SUPPORTED, "f:ogg v:theora m:video/ogg");
+		configuration.addProperty(SUPPORTED, "f:ogg a:vorbis|flac m:audio/ogg");
+		configuration.addProperty(SUPPORTED, "f:wav n:2 m:audio/wav");
+		configuration.addProperty(SUPPORTED, "f:webm v:vp8|vp9 m:video/webm");
 		configuration.addProperty(SUPPORTED, "f:bmp m:image/bmp");
 		configuration.addProperty(SUPPORTED, "f:jpg m:image/jpeg");
 		configuration.addProperty(SUPPORTED, "f:png m:image/png");
@@ -154,6 +159,8 @@ public class WebRender extends DeviceConfiguration implements RendererConfigurat
 			case XBOX1:   return "Xbox One";
 			case OPERA:   return "Opera";
 			case EDGE:    return "Edge";
+			case CHROMIUM:return "Chromium";	
+			case VIVALDI: return "Vivaldi";	
 			default:      return Messages.getString("PMS.142");
 		}
 	}
@@ -170,6 +177,8 @@ public class WebRender extends DeviceConfiguration implements RendererConfigurat
 			ua.contains("playstation 4") ? PS4 :
 			ua.contains("xbox one")      ? XBOX1 :
 			ua.contains("opera")         ? OPERA :
+			ua.contains("chromium")      ? CHROMIUM :
+			ua.contains("vivaldi")       ? VIVALDI :
 			0;
 	}
 
@@ -219,6 +228,8 @@ public class WebRender extends DeviceConfiguration implements RendererConfigurat
 			case XBOX1:   return "xbox-one.png";
 			case OPERA:   return "opera.png";
 			case EDGE:    return "edge.png";
+			case CHROMIUM:return "chromium.png";	
+			case VIVALDI: return "vivaldi.png";	
 			default:      return super.getRendererIcon();
 		}
 	}
