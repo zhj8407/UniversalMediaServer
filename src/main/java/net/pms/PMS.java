@@ -406,7 +406,11 @@ public class PMS {
 	 */
 	private boolean init() throws Exception {
 		// Show the language selection dialog before displayBanner();
-		if (configuration.getLanguageRawString() == null || !Languages.isValid(configuration.getLanguageRawString())) {
+		if (
+			!isHeadless() &&
+			(configuration.getLanguageRawString() == null ||
+			!Languages.isValid(configuration.getLanguageRawString()))
+		) {
 			LanguageSelection languageDialog = new LanguageSelection(null, PMS.getLocale(), false);
 			if (languageDialog != null) {
 				languageDialog.show();
@@ -612,7 +616,7 @@ public class PMS {
 
 		// launch ChromecastMgr
 		jmDNS = null;
-		launchJmDNSRenders();
+		launchJmDNSRenderers();
 
 		OutputParams outputParams = new OutputParams(configuration);
 
@@ -819,6 +823,9 @@ public class PMS {
 		});
 
 		configuration.setAutoSave();
+		UPNPHelper.sendByeBye();
+		LOGGER.trace("Waiting 250 milliseconds...");
+		Thread.sleep(250);
 		UPNPHelper.sendAlive();
 		LOGGER.trace("Waiting 250 milliseconds...");
 		Thread.sleep(250);
@@ -921,10 +928,16 @@ public class PMS {
 
 			if (file.exists()) {
 				if (!file.isDirectory()) {
-					LOGGER.warn("The file " + folder + " is not a directory! Please remove it from your Shared folders list on the " + Messages.getString("LooksFrame.22") + " tab");
+					LOGGER.warn(
+						"The file \"{}\" is not a folder! Please remove it from your shared folders list on the \"{}\" tab or in the configuration file.",
+						folder,  Messages.getString("LooksFrame.22")
+					);
 				}
 			} else {
-				LOGGER.warn("The directory " + folder + " does not exist. Please remove it from your Shared folders list on the " + Messages.getString("LooksFrame.22") + " tab");
+				LOGGER.warn(
+					"The folder \"{}\" does not exist. Please remove it from your shared folders list on the \"{}\" tab or in the configuration file.",
+					folder,  Messages.getString("LooksFrame.22")
+				);
 			}
 
 			// add the file even if there are problems so that the user can update the shared folders as required.
@@ -1061,7 +1074,7 @@ public class PMS {
 			sb.append(System.getProperty("os.arch").replace(" ", "_"));
 			sb.append('-');
 			sb.append(System.getProperty("os.version").replace(" ", "_"));
-			sb.append(", UPnP/1.0, UMS/").append(getVersion());
+			sb.append(", UPnP/1.0 DLNADOC/1.50, UMS/").append(getVersion());
 			serverName = sb.toString();
 		}
 
@@ -1171,8 +1184,8 @@ public class PMS {
 		if (isHeadless() && denyHeadless) {
 			System.err.println(
 				"Either a graphics environment isn't available or headless " +
-			    "mode is forced, but \"noconsole\" is specified. " + PMS.NAME +
-			    " can't start, exiting."
+				"mode is forced, but \"noconsole\" is specified. " + PMS.NAME +
+				" can't start, exiting."
 			);
 			System.exit(1);
 		} else if (!isHeadless()) {
@@ -1378,7 +1391,7 @@ public class PMS {
 		LOGGER.info("Java: " + System.getProperty("java.vm.name") + " " + System.getProperty("java.version") + " " + System.getProperty("sun.arch.data.model") + "-bit" + " by " + System.getProperty("java.vendor"));
 		LOGGER.info("OS: " + System.getProperty("os.name") + " " + getOSBitness() + "-bit " + System.getProperty("os.version"));
 		LOGGER.info("Encoding: " + System.getProperty("file.encoding"));
-		LOGGER.info("Memory: " + memoryInMB + " " + Messages.getString("StatusTab.12"));
+		LOGGER.info("Memory: {} MB", memoryInMB);
 		LOGGER.info("Language: " + WordUtils.capitalize(PMS.getLocale().getDisplayName(Locale.ENGLISH)));
 		LOGGER.info("");
 
@@ -1855,7 +1868,7 @@ public class PMS {
 		return dynamicPls;
 	}
 
-	private void launchJmDNSRenders() {
+	private void launchJmDNSRenderers() {
 		if (configuration.useChromecastExt()) {
 			if (RendererConfiguration.getRendererConfigurationByName("Chromecast") != null) {
 				try {
@@ -1866,7 +1879,7 @@ public class PMS {
 				}
 			}
 			else {
-				LOGGER.info("No Chromecast render found. Please enable one and restart.");
+				LOGGER.info("No Chromecast renderer found. Please enable one and restart.");
 			}
 		}
 	}
@@ -1905,7 +1918,7 @@ public class PMS {
 		return instance.credMgr.getTag(owner, username);
 	}
 
-	public static boolean verifyCred(String owner,String tag, String user, String pwd) {
+	public static boolean verifyCred(String owner, String tag, String user, String pwd) {
 		return instance.credMgr.verify(owner, tag, user, pwd);
 	}
 

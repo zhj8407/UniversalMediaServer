@@ -1,6 +1,7 @@
 package net.pms.dlna;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -10,7 +11,9 @@ import net.pms.configuration.RendererConfiguration;
 import net.pms.dlna.MediaInfo.StreamType;
 import net.pms.formats.v2.SubtitleType;
 import net.pms.util.FileUtil;
+import net.pms.util.ImagesUtil;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.imaging.ImageReadException;
 import static org.apache.commons.lang3.StringUtils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +67,7 @@ public class LibMediaInfoParser {
 	public synchronized static void parse(DLNAMediaInfo media, InputFile inputFile, int type, RendererConfiguration renderer) {
 		File file = inputFile.getFile();
 		if (!media.isMediaparsed() && file != null && MI.isValid() && MI.Open(file.getAbsolutePath()) > 0) {
-			try {
+//			try {
 				StreamType general = StreamType.General;
 				StreamType video = StreamType.Video;
 				StreamType audio = StreamType.Audio;
@@ -83,6 +86,7 @@ public class LibMediaInfoParser {
 				value = MI.Get(general, 0, "Cover_Data");
 				if (!value.isEmpty()) {
 					media.setThumb(new Base64().decode(value.getBytes(StandardCharsets.US_ASCII)));
+					media.setThumbready(true);
 				}
 				value = MI.Get(general, 0, "Title");
 				if (!value.isEmpty()) {
@@ -144,6 +148,11 @@ public class LibMediaInfoParser {
 									LOGGER.debug("Could not parse bits per sample \"" + value + "\"");
 								}
 							}
+						}
+
+						value = MI.Get(video, i, "Format_Profile");
+						if (!value.isEmpty() && media.getCodecV() != null && media.getCodecV().equals(FormatConfiguration.H264)) {
+							media.setAvcLevel(getAvcLevel(value));
 						}
 					}
 				}
@@ -222,9 +231,23 @@ public class LibMediaInfoParser {
 				// set Image
 				media.setImageCount(MI.Count_Get(image));
 				if (media.getImageCount() > 0) {
-					getFormat(image, media, currentAudioTrack, MI.Get(image, 0, "Format"), file);
-					media.setWidth(getPixelValue(MI.Get(image, 0, "Width")));
-					media.setHeight(getPixelValue(MI.Get(image, 0, "Height")));
+					boolean parseByMediainfo = false;
+					// for image parsing use Imaging instead of the MediaInfo which doesn't provide enough information
+					try {
+						ImagesUtil.parseImageByImaging(file, media);
+						media.setContainer(media.getCodecV());
+					} catch (ImageReadException | IOException e) {
+						LOGGER.debug("Error when parsing image ({}) with Imaging, switching to MediaInfo.", file.getAbsolutePath());
+						parseByMediainfo = true;
+					}
+
+					if (parseByMediainfo) {
+						getFormat(image, media, currentAudioTrack, MI.Get(image, 0, "Format"), file);
+						media.setWidth(getPixelValue(MI.Get(image, 0, "Width")));
+						media.setHeight(getPixelValue(MI.Get(image, 0, "Height")));
+					}
+					
+//					media.setImageCount(media.getImageCount() + 1);
 				}
 
 				// set Subs in text format
@@ -337,9 +360,9 @@ public class LibMediaInfoParser {
 				}
 
 				media.finalize(type, inputFile);
-			} catch (Exception e) {
-				LOGGER.error("Error in MediaInfo parsing:", e);
-			} finally {
+//			} catch (Exception e) {
+//				LOGGER.error("Error in MediaInfo parsing:", e);
+//			} finally {
 				MI.Close();
 				if (media.getContainer() == null) {
 					media.setContainer(DLNAMediaLang.UND);
@@ -350,7 +373,7 @@ public class LibMediaInfoParser {
 				}
 
 				media.setMediaparsed(true);
-			}
+//			}
 		}
 	}
 
@@ -384,6 +407,18 @@ public class LibMediaInfoParser {
 		getFormat(streamType, media, audio, value, null);
 	}
 
+	/**
+	 * Sends the correct information to media.setContainer(),
+	 * media.setCodecV() or media.setCodecA, depending on streamType.
+	 *
+	 * TODO: Rename to something like setFormat - this is not a getter.
+	 *
+	 * @param streamType
+	 * @param media
+	 * @param audio
+	 * @param value
+	 * @param file 
+	 */
 	private static void getFormat(StreamType streamType, DLNAMediaInfo media, DLNAMediaAudio audio, String value, File file) {
 		if (value.isEmpty()) {
 			return;
@@ -392,7 +427,9 @@ public class LibMediaInfoParser {
 		value = value.toLowerCase();
 		String format = null;
 
-		if (value.startsWith("3g2")) {
+		if (isBlank(value)) {
+			return;
+		} else if (value.startsWith("3g2")) {
 			format = FormatConfiguration.THREEGPP2;
 		} else if (value.startsWith("3gp")) {
 			format = FormatConfiguration.THREEGPP;
@@ -416,6 +453,8 @@ public class LibMediaInfoParser {
 			format = FormatConfiguration.MPEGTS;
 		} else if (value.contains("aiff")) {
 			format = FormatConfiguration.AIFF;
+		} else if (value.startsWith("atmos") || value.equals("131")) {
+			format = FormatConfiguration.ATMOS;
 		} else if (value.contains("ogg")) {
 			format = FormatConfiguration.OGG;
 		} else if (value.contains("opus")) {
@@ -460,6 +499,8 @@ public class LibMediaInfoParser {
 			if (media.getCodecV() != null && media.getCodecV().equals(FormatConfiguration.MPEG2) && audio.getCodecA() == null) {
 				format = FormatConfiguration.MPEG1;
 			}
+		} else if (value.equals("au") || value.equals("uLaw/AU Audio File")) {
+			format = FormatConfiguration.AU;
 		} else if (value.equals("layer 3")) {
 			if (audio.getCodecA() != null && audio.getCodecA().equals(FormatConfiguration.MPA)) {
 				format = FormatConfiguration.MP3;
@@ -468,7 +509,12 @@ public class LibMediaInfoParser {
 					media.setContainer(FormatConfiguration.MP3);
 				}
 			}
-		} else if (value.equals("ma") || value.equals("ma / core") || value.equals("134")) {
+		} else if (value.equals("layer 2") && audio.getCodecA() != null && media.getContainer() != null &&
+				   audio.getCodecA().equals(FormatConfiguration.MPA) && media.getContainer().equals(FormatConfiguration.MPA)) {
+			// only for audio files:
+			format = FormatConfiguration.MP2;
+			media.setContainer(FormatConfiguration.MP2);
+		} else if (value.equals ("ma") || value.equals("ma / core") || value.equals("134")) {
 			if (audio.getCodecA() != null && audio.getCodecA().equals(FormatConfiguration.DTS)) {
 				format = FormatConfiguration.DTSHD;
 			}
@@ -522,15 +568,29 @@ public class LibMediaInfoParser {
 			format = FormatConfiguration.DTS;
 		} else if (value.equals("mpeg audio")) {
 			format = FormatConfiguration.MPA;
-		} else if (value.equals("161") || value.startsWith("wma")) {
+		} else if (value.startsWith("wma")) {
 			format = FormatConfiguration.WMA;
 			if (media.getCodecV() == null) {
-				media.setContainer(FormatConfiguration.WMA);
+				media.setContainer(format);
+			}
+		} else if (
+			streamType == StreamType.Audio && media.getCodecV() == null && audio != null && audio.getCodecA() != null &&
+			audio.getCodecA() == FormatConfiguration.WMA &&
+			(value.equals("161") || value.equals("162") || value.equals("163") || value.equalsIgnoreCase("A"))
+		) {
+			if (value.equals("161")) {
+				format = FormatConfiguration.WMA;
+			} else if (value.equals("162")) {
+				format = FormatConfiguration.WMAPRO;
+			} else if (value.equals("163")) {
+				format = FormatConfiguration.WMALOSSLESS;
+			} else if (value.equalsIgnoreCase("A")) {
+				format = FormatConfiguration.WMAVOICE;
 			}
 		} else if (value.equals("flac")) {
 			format = FormatConfiguration.FLAC;
 		} else if (value.equals("monkey's audio")) {
-			format = FormatConfiguration.APE;
+			format = FormatConfiguration.MONKEYS_AUDIO;
 		} else if (value.contains("musepack")) {
 			format = FormatConfiguration.MPC;
 		} else if (value.contains("wavpack")) {
@@ -636,9 +696,14 @@ public class LibMediaInfoParser {
 	}
 
 	public static int getBitrate(String value) {
+		if (value.isEmpty()) {
+			return 0;
+		}
+
 		if (value.contains("/")) {
 			value = value.substring(0, value.indexOf('/')).trim();
 		}
+
 		try {
 			return Integer.parseInt(value);
 		} catch (NumberFormatException e) {

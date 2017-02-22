@@ -245,7 +245,7 @@ public class DLNAMediaDatabase implements Runnable {
 				sb.append(", MUXINGMODE              VARCHAR2(").append(SIZE_MUXINGMODE).append(')');
 				sb.append(", FRAMERATEMODE           VARCHAR2(").append(SIZE_FRAMERATE_MODE).append(')');
 				sb.append(", STEREOSCOPY             VARCHAR2(").append(SIZE_STEREOSCOPY).append(')');
-				sb.append(", MATRIXCOEFFICIENTS      VARCHAR2(").append(SIZE_MATRIX_COEFFICIENTS).append(')');;
+				sb.append(", MATRIXCOEFFICIENTS      VARCHAR2(").append(SIZE_MATRIX_COEFFICIENTS).append(')');
 				sb.append(", TITLECONTAINER          VARCHAR2(").append(SIZE_TITLE).append(')');
 				sb.append(", TITLEVIDEOTRACK         VARCHAR2(").append(SIZE_TITLE).append(')');
 				sb.append(", VIDEOTRACKCOUNT         INT");
@@ -795,7 +795,7 @@ public class DLNAMediaDatabase implements Runnable {
 
 	public void scanLibrary() {
 		if (isScanLibraryRunning()) {
-			LOGGER.info(Messages.getString("NetworkTab.70"));
+			LOGGER.info("Cannot start library scanner: A scan is already in progress");
 		} else {
 			scanner = new Thread(this, "Library Scanner");
 			scanner.start();

@@ -30,7 +30,7 @@
 	<artifactId>ums</artifactId>
 	<name>Universal Media Server</name>
 	<packaging>jar</packaging>
-	<version>6.4.1-SNAPSHOT</version>
+	<version>6.5.4-SNAPSHOT</version>
 	<url>http://www.universalmediaserver.com/</url>
 	<inceptionYear>2012</inceptionYear>
 
@@ -68,7 +68,7 @@
 	</issueManagement>
 	<properties>
 		<!-- NSIS needs a version without "-SNAPSHOT" or "-b1" -->
-		<project.version.short>6.4.1</project.version.short>
+		<project.version.short>6.5.3</project.version.short>
 		<cuelib-version>1.2.1-2008-06-13</cuelib-version>
 
 		<!-- In versions after 1.6.0, they removed code that the MovieInfo plugin relies on -->
@@ -77,7 +77,6 @@
 		<!-- Version 2.7.0 is the last free version. The latest libraries are shipped only with the commercial JGoodies Smart Client -->
 		<jgoodies-looks-version>2.7.0</jgoodies-looks-version>
 		<mediautil-version>1.0</mediautil-version>
-		<slf4j-version>1.7.21</slf4j-version>
 
 		<!-- Skip 4.65-1.05-RC because it doesn't work, author is working on fixing it -->
 		<sevenzip-version>4.65-1.04-RC</sevenzip-version>
@@ -87,10 +86,12 @@
 		<project.binaries>${project.basedir}/target/bin</project.binaries>
 
 		<project.binaries-base>http://universalmediaserver.com/svn/binaries</project.binaries-base>
-		<binary-revision>56</binary-revision>
+		<binary-revision>61</binary-revision>
 
-		<maven-javadoc-plugin-version>2.10.3</maven-javadoc-plugin-version>
-		<git-commit-id-plugin-version>2.1.15</git-commit-id-plugin-version>
+		<maven-javadoc-plugin-version>2.10.4</maven-javadoc-plugin-version>
+		<git-commit-id-plugin-version>2.2.1</git-commit-id-plugin-version>
+		<maven-assembly-plugin-version>3.0.0</maven-assembly-plugin-version>
+		<logback-version>1.1.8</logback-version>
 
 		<!--
 			 use the Windows makensis.exe for Windows builds unless
@@ -99,14 +100,6 @@
 		 -->
 		<makensis-bin>${project.external-resources}/third-party/nsis/makensis.exe</makensis-bin>
 	</properties>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>ossrh</id>
-			<name>Sonatype OSS Repository</name>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-			<layout>default</layout>
-		</pluginRepository>
-	</pluginRepositories>
 	<repositories>
 		<!-- GSON -->
 		<repository>
@@ -124,6 +117,21 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
+		<repository>
+			<id>jaudiotagger-repository</id>
+			<url>https://dl.bintray.com/ijabz/maven</url>
+		</repository>
+		<repository>
+  			<id>apache.snapshots</id>
+  			<name>Apache Development Snapshot Repository</name>
+  			<url>https://repository.apache.org/content/repositories/snapshots/</url>
+  			<releases>
+    			<enabled>false</enabled>
+  			</releases>
+  			<snapshots>
+    			<enabled>true</enabled>
+  			</snapshots>
+		</repository>  
 	</repositories>
 	<dependencies>
 		<!-- TODO this can be removed when MEncoder is removed -->
@@ -169,37 +177,27 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
-			<version>3.3.2</version>
+			<version>3.5</version>
 		</dependency>
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<version>1.4.192</version>
+			<version>1.4.193</version>
 		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
-			<version>1.1.7</version>
+			<version>${logback-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-core</artifactId>
-			<version>1.1.7</version>
+			<version>${logback-version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.sanselan</groupId>
-			<artifactId>sanselan</artifactId>
-			<version>0.97-incubator</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>${slf4j-version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jcl-over-slf4j</artifactId>
-			<version>${slf4j-version}</version>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-imaging</artifactId>
+			<version>1.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
@@ -240,9 +238,19 @@
 			<version>3.2.1</version>
 		</dependency>
 		<dependency>
-			<groupId>org</groupId>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-tiff</artifactId>
+			<version>3.2.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-bmp</artifactId>
+			<version>3.2.1</version>
+		</dependency>
+		<dependency>
+			<groupId>net.jthink</groupId>
 			<artifactId>jaudiotagger</artifactId>
-			<version>2.0.3</version>
+			<version>2.2.5</version>
 		</dependency>
 		<dependency>
 			<groupId>com.jgoodies</groupId>
@@ -355,7 +363,7 @@
 		<dependency>
 			<groupId>su.litvak.chromecast</groupId>
 			<artifactId>api-v2</artifactId>
-			<version>0.9.2</version>
+			<version>0.10.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.javassist</groupId>
@@ -365,7 +373,7 @@
 		<dependency>
 			<groupId>com.ibm.icu</groupId>
 			<artifactId>icu4j</artifactId>
-			<version>57.1</version>
+			<version>58.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.code.findbugs</groupId>
@@ -476,7 +484,7 @@
 						-->
 						<argLine>-Duser.language=en -Djna.nosys=true -XX:-UseSplitVerifier</argLine> <!-- only one argLine element is processed -->
 					</configuration>
-					<version>2.19</version>
+					<version>2.19.1</version>
 				</plugin>
 
 				<!-- 
@@ -625,12 +633,13 @@
 
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.5.1</version>
+				<version>3.6.0</version>
 				<configuration>
 					<source>1.7</source>
 					<target>1.7</target>
 					<testSource>1.7</testSource>
 					<testTarget>1.7</testTarget>
+					<compilerArgument>${compilerArgument}</compilerArgument>
 				</configuration>
 			</plugin>
 
@@ -694,7 +703,7 @@
 							<groupId>jwbroek.cuelib</groupId>
 							<artifactId>cuelib</artifactId>
 							<version>${cuelib-version}</version>
-							<downloadUrl>http://cuelib.googlecode.com/files/cuelib-${cuelib-version}.jar</downloadUrl>
+							<downloadUrl>http://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/cuelib/cuelib-${cuelib-version}.jar</downloadUrl>
 							<checksum>d03b6b960b3b83a2a419e8b5f07b6ba4bd18387b</checksum>
 						</artifactItem>
 						<artifactItem>
@@ -721,7 +730,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-site-plugin</artifactId>
-				<version>3.5.1</version>
+				<version>3.6</version>
 				<dependencies>
 					<dependency>
 						<groupId>org.apache.maven.doxia</groupId>
@@ -734,7 +743,7 @@
 						<plugin>
 							<groupId>org.apache.maven.plugins</groupId>
 							<artifactId>maven-project-info-reports-plugin</artifactId>
-							<version>2.8.1</version>
+							<version>2.9</version>
 							<reports>
 								<report>index</report>
 								<report>dependencies</report>
@@ -748,7 +757,7 @@
 						<plugin>
 							<groupId>org.apache.maven.plugins</groupId>
 							<artifactId>maven-surefire-report-plugin</artifactId>
-							<version>2.19</version>
+							<version>2.19.1</version>
 							<configuration>
 								<showSuccess>false</showSuccess>
 							</configuration>
@@ -803,7 +812,7 @@
 						<plugin>
 							<groupId>org.codehaus.mojo</groupId>
 							<artifactId>findbugs-maven-plugin</artifactId>
-							<version>3.0.3</version>														
+							<version>3.0.4</version>														
 						</plugin>
 
 						<!-- Checkstyle report will go out of memory because of the huge amount of issues it finds(!)
@@ -823,7 +832,7 @@
 						<plugin>
 							<groupId>org.apache.maven.plugins</groupId>
 							<artifactId>maven-pmd-plugin</artifactId>
-							<version>3.6</version>
+							<version>3.7</version>
 							<configuration>
 								<linkXref>false</linkXref>
 								<sourceEncoding>utf-8</sourceEncoding>
@@ -887,7 +896,7 @@
 					<!-- Plugin to assemble a jar with dependencies -->
 					<plugin>
 						<artifactId>maven-assembly-plugin</artifactId>
-						<version>2.6</version>
+						<version>${maven-assembly-plugin-version}</version>
 							<configuration>
 								<descriptors>
 									<descriptor>${project.basedir}/src/main/assembly/jar-with-dependencies.xml</descriptor>
@@ -1098,7 +1107,7 @@
 				<plugins>
 					<plugin>
 						<artifactId>maven-assembly-plugin</artifactId>
-						<version>2.5.2</version>
+						<version>${maven-assembly-plugin-version}</version>
 						<executions>
 							<!-- Assemble a jar with dependencies -->
 							<execution>
@@ -1228,7 +1237,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-antrun-plugin</artifactId>
-						<version>1.7</version>
+						<version>1.8</version>
 						<executions>
 							<execution>
 								<id>process-resources-osx-java-7</id>
@@ -1321,7 +1330,7 @@
 					</plugin>
 					<plugin>
 						<artifactId>maven-assembly-plugin</artifactId>
-						<version>2.4</version>
+						<version>${maven-assembly-plugin-version}</version>
 						<executions>
 							<!-- Assemble a jar with dependencies -->
 							<execution>
@@ -1383,7 +1392,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-enforcer-plugin</artifactId>
-						<version>1.4</version>
+						<version>1.4.1</version>
 						<executions>
 							<execution>
 								<id>enforce-java</id>
@@ -1498,7 +1507,7 @@
 					</plugin>
 					<plugin>
 						<artifactId>maven-assembly-plugin</artifactId>
-						<version>2.4</version>
+						<version>${maven-assembly-plugin-version}</version>
 						<executions>
 							<!-- Assemble a jar with dependencies -->
 							<execution>
@@ -1569,7 +1578,7 @@
 					<!-- Plugin to assemble a jar with dependencies -->
 					<plugin>
 						<artifactId>maven-assembly-plugin</artifactId>
-						<version>2.4</version>
+						<version>${maven-assembly-plugin-version}</version>
 						<executions>
 							<execution>
 								<id>make-jar-with-dependencies-win</id>
