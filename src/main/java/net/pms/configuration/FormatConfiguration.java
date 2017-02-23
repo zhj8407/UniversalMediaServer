@@ -247,12 +247,12 @@ public class FormatConfiguration {
 		 * non-null parameters does not match, false is returned. For example,
 		 * assume a configuration that contains only the following line:
 		 * 
-		 * Supported = f:mp4 n:2 se:srt
+		 * Supported = f:mp4 n:2 se:SUBRIP
 		 *  
 		 * match("mp4", null, null, 2, 0, 0, 0, 0, null, null) = true
 		 * match("mp4", null, null, 6, 0, 0, 0, 0, null, null) = false 
 		 * match("wav", null, null, 2, 0, 0, 0, 0, null, null) = false
-		 * match("mp4", null, null, 2, 0, 0, 0, 0, null, "srt") = true
+		 * match("mp4", null, null, 2, 0, 0, 0, 0, null, "SUBRIP") = true
 		 * match("mp4", null, null, 2, 0, 0, 0, 0, null, "sub") = false 
 		 *
 		 * @param format
