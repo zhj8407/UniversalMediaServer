@@ -283,7 +283,7 @@ public class FormatConfiguration {
 		) {
 
 			// Satisfy a minimum threshold
-			if (format == null && videoCodec == null && audioCodec == null && subsFormat == null) {
+			if (format == null && videoCodec == null && audioCodec == null) {
 				// We have no matchable info. This can happen with unparsed
 				// mediainfo objects (e.g. from WEB.conf or plugins).
 				return false;
