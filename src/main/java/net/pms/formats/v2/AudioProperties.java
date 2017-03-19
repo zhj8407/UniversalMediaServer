@@ -219,4 +219,15 @@ public class AudioProperties {
 			return result;
 		}
 	}
+
+	@Override
+	public String toString() {
+		StringBuilder result = new StringBuilder();
+		result.append("Channel(s): ").append(getNumberOfChannels());
+		if (getAudioDelay() != 0) {
+			result.append(", Delay: ").append(getAudioDelay());
+		}
+
+		return result.toString();
+	}
 }
