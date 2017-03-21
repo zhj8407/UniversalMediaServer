@@ -1721,11 +1721,7 @@ public class DLNAMediaInfo implements Cloneable {
 				result.append(", Images: ").append(getImageCount());
 			}
 			result.append(", Image Width: ").append(getWidth());
-			if (getHeight() != 0) {
-				result.append(", Image Height: ").append(getHeight());
-			} else {
-				result.append(", Image Height: ").append("DNL");
-			}
+			result.append(", Image Height: ").append(getHeight());
 		}
 
 		if (getThumb() != null) {
