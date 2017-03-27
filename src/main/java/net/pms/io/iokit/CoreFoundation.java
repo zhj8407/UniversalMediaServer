@@ -1,20 +1,20 @@
 /*
- * Oshi (https://github.com/oshi/oshi)
+ * Universal Media Server, for streaming any media to DLNA compatible renderers
+ * based on the http://www.ps3mediaserver.org. Copyright (C) 2012 UMS
+ * developers.
  *
- * Copyright (c) 2010 - 2017 The Oshi Project Team
+ * This program is a free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; version 2 of the License only.
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * Maintainers:
- * dblock[at]dblock[dot]org
- * widdis[at]gmail[dot]com
- * enrico.bianchi[at]gmail[dot]com
- *
- * Contributors:
- * https://github.com/oshi/oshi/graphs/contributors
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 package net.pms.io.iokit;
 
@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import net.pms.util.jna.JnaIntEnum;
 import net.pms.util.jna.JnaEnumTypeMapper;
+import net.pms.util.jna.JnaLongEnum;
 import net.pms.util.jna.StringByReference;
 import net.pms.util.jna.WStringByReference;
 import com.sun.jna.Library;
@@ -42,15 +43,21 @@ import com.sun.jna.ptr.ShortByReference;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
- * CoreFoundation framework for power supply stats. This class should be
- * considered non-API as it may be removed if/when its code is incorporated into
- * the JNA project.
- * <p>
- * This is a copy of {@link oshi.jna.platform.mac.CoreFoundation} where all
- * members are changed from package private to public.
+ * Partial mapping Apple's Core Foundation framework.
  *
- * @author widdis[at]gmail[dot]com
- * TODO: Fix this and header
+ * Most mappings are from
+ * <ul>
+ *   <li>CFArray.h</li>
+ *   <li>CFBase.h</li>
+ *   <li>CFData.h</li>
+ *   <li>CFDictionary.h</li>
+ *   <li>CFNumber.h</li>
+ *   <li>CFString.h</li>
+ * </ul>
+ *
+ * None of the above are fully mapped.
+ *
+ * @author Nadahar
  */
 @SuppressFBWarnings("UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD")
 public interface CoreFoundation extends Library {
@@ -63,6 +70,74 @@ public interface CoreFoundation extends Library {
     CoreFoundation INSTANCE = (CoreFoundation) Native.loadLibrary("CoreFoundation", CoreFoundation.class, options);
 
     static final CFAllocatorRef ALLOCATOR = INSTANCE.CFAllocatorGetDefault();
+
+	/**
+	 * Returns the type identifier for the {@code CFNull} opaque type.
+	 *
+	 * @return The type identifier for the {@code CFNull} opaque type.
+	 */
+    long CFNullGetTypeID();
+
+    /**
+     * Returns the type identifier for the {@code CFAllocator} opaque type.
+     *
+     * @return The type identifier for the {@code CFAllocator} opaque type.
+     */
+    long CFAllocatorGetTypeID();
+
+	/**
+	 * Returns the unique identifier of an opaque type to which a Core
+	 * Foundation object belongs.
+	 * <p>
+	 * This function returns a value that uniquely identifies the opaque type of
+	 * any Core Foundation object. You can compare this value with the known
+	 * {@code CFTypeID} identifier obtained with a “GetTypeID” method specific to a
+	 * type, for example {@link #CFArrayGetTypeID}. These values might change from
+	 * release to release or platform to platform.
+	 *
+	 * @param cf the {@code CFType} object to examine.
+	 * @return A value of type {@code CFTypeID} that identifies the opaque type
+	 *         of {@code cf}.
+	 */
+    long CFGetTypeID(CFTypeRef cf);
+
+	/**
+	 * Returns a textual description of a Core Foundation type, as identified by
+	 * its {@code type ID}, which can be used when debugging.
+	 * <p>
+	 * References are owned if created by functions including "Create" or "Copy"
+	 * and must be released with {@link #CFRelease} to avoid leaking references.
+	 * <p>
+	 * You can use this function for debugging Core Foundation objects in your
+	 * code. Note, however, that the description for a given object may be
+	 * different in different releases of the operating system. Do not create
+	 * dependencies in your code on the content or format of the information
+	 * returned by this function.
+	 *
+	 * @param type_id an integer of type {@code CFTypeID} that uniquely
+	 *            identifies a Core Foundation opaque type.
+	 * @return A {@code CFString} containing a type description. Ownership
+	 *         follows the <a href=
+	 *         "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-103029"
+	 *         >The Create Rule</a>.
+	 */
+    CFStringRef CFCopyTypeIDDescription(long type_id);
+
+	/**
+	 * Retains a Core Foundation object.
+	 *
+	 * You should retain a Core Foundation object when you receive it from
+	 * elsewhere (that is, you did not create or copy it) and you want it to
+	 * persist. If you retain a Core Foundation object you are responsible for
+	 * releasing it (see <a href=
+	 * "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/CFMemoryMgmt.html#//apple_ref/doc/uid/10000127i"
+	 * >Memory Management Programming Guide for Core Foundation</a>).
+	 *
+	 * @param cf the {@code CFType} object to retain. This value must not be
+	 *            {@code null}.
+	 * @return The input value, {@code cf}.
+	 */
+    CFTypeRef CFRetain(CFTypeRef cf);
 
 	/**
 	 * Releases a Core Foundation object.
@@ -86,36 +161,62 @@ public interface CoreFoundation extends Library {
     void CFRelease(CFTypeRef cf);
 
 	/**
-	 * Retains a Core Foundation object.
+	 * Determines whether two Core Foundation objects are considered equal.
+	 * <p>
+	 * Equality is something specific to each Core Foundation opaque type. For
+	 * example, two {@code CFNumber} objects are equal if the numeric values
+	 * they represent are equal. Two {@code CFString} objects are equal if they
+	 * represent identical sequences of characters, regardless of encoding.
 	 *
-	 * You should retain a Core Foundation object when you receive it from
-	 * elsewhere (that is, you did not create or copy it) and you want it to
-	 * persist. If you retain a Core Foundation object you are responsible for
-	 * releasing it (see <a href=
-	 * "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/CFMemoryMgmt.html#//apple_ref/doc/uid/10000127i"
-	 * >Memory Management Programming Guide for Core Foundation</a>).
-	 *
-	 * @param cf the {@code CFType} object to retain. This value must not be
-	 *            {@code null}.
-	 * @return The input value, {@code cf}.
+	 * @param cf1 a {@code CFType} object to compare to {@code cf2}.
+	 * @param cf2 a {@code CFType} object to compare to {@code cf1}.
+	 * @return {@code true} if {@code cf1} and {@code cf2} are of the same type
+	 *         and considered equal, otherwise {@code false}.
 	 */
-    CFTypeRef CFRetain(CFTypeRef cf);
+    boolean CFEqual(CFTypeRef cf1, CFTypeRef cf2);
 
 	/**
-	 * Returns the unique identifier of an opaque type to which a Core
-	 * Foundation object belongs.
+	 * Returns a code that can be used to identify an object in a hashing
+	 * structure.
 	 * <p>
-	 * This function returns a value that uniquely identifies the opaque type of
-	 * any Core Foundation object. You can compare this value with the known
-	 * {@code CFTypeID} identifier obtained with a “GetTypeID” method specific to a
-	 * type, for example {@link #CFArrayGetTypeID}. These values might change from
-	 * release to release or platform to platform.
+	 * Two objects that are equal (as determined by the {@link #CFEqual}
+	 * function) have the same hashing value. However, the converse is not true:
+	 * two objects with the same hashing value might not be equal. That is,
+	 * hashing values are not necessarily unique.
+	 * <p>
+	 * The hashing value for an object might change from release to release or
+	 * from platform to platform.
 	 *
-	 * @param cf the {@code CFType} object to examine.
-	 * @return A value of type {@code CFTypeID} that identifies the opaque type
-	 *         of {@code cf}.
+	 * @param cf a {@code CFType} object to examine.
+	 * @return A {@link Long} of type {@code CFHashCode} that represents a
+	 *         hashing value for {@code cf}.
 	 */
-    int CFGetTypeID(CFTypeRef cf);
+    long CFHash(CFTypeRef cf);
+
+	/**
+	 * Returns a textual description of a Core Foundation object.
+	 * <p>
+	 * References are owned if created by functions including "Create" or "Copy"
+	 * and must be released with {@link #CFRelease} to avoid leaking references.
+	 * <p>
+	 * The nature of the description differs by object. For example, a
+	 * description of a {@code CFArray} object would include descriptions of
+	 * each of the elements in the collection.
+	 * <p>
+	 * You can use this function for debugging Core Foundation objects in your
+	 * code. Note, however, that the description for a given object may be
+	 * different in different releases of the operating system. Do not create
+	 * dependencies in your code on the content or format of the information
+	 * returned by this function.
+	 *
+	 * @param cf the {@code CFType} object (a generic reference of type
+	 *            {@link CFTypeRef}) from which to derive a description.
+	 * @return A string that contains a description of {@code cf}. Ownership
+	 *         follows the <a href=
+	 *         "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-103029"
+	 *         >The Create Rule</a>.
+	 */
+    CFStringRef CFCopyDescription(CFTypeRef cf);
 
     /** Untyped type reference */
     public class CFTypeRef extends PointerType {
@@ -127,6 +228,16 @@ public interface CoreFoundation extends Library {
     	public CFTypeRef(Pointer p) {
     		super(p);
     	}
+
+		@Override
+		public String toString() {
+			CFStringRef description = INSTANCE.CFCopyDescription(this);
+			try {
+				return description.toString();
+			} finally {
+				INSTANCE.CFRelease(description);
+			}
+		}
     }
 
     public class CFNumberRef extends CFTypeRef {
@@ -221,7 +332,7 @@ public interface CoreFoundation extends Library {
 			}
 			return getValue().toString();
 		}
-		
+
 		/**
 		 * Use this as a substitute for cast from any {@link CFTypeRef}
 		 * instance.
@@ -232,7 +343,7 @@ public interface CoreFoundation extends Library {
 		 * {@link CFNumberRef}'s constructor. This instantiates a new
 		 * {@link CFNumberRef} and transfers the {@link Pointer} to achieve the
 		 * same result.
-		 * 
+		 *
 		 * @param cfType the {@link CFTypeRef} to "cast" to {@link CFNumberRef}.
 		 * @return The {@link CFNumberRef} instance.
 		 */
@@ -241,20 +352,46 @@ public interface CoreFoundation extends Library {
 		}
     }
 
+    /**
+     * Returns the type identifier for the {@code CFNumber} opaque type.
+     *
+     * @return The type identifier for the {@code CFNumber} opaque type.
+     */
+    long CFNumberGetTypeID();
+
 	/**
-	 * Creates a {@code CFNumber} with the given value. The type of number
-	 * pointed to by the {@code valuePtr} is specified by {@code theType}. If
-	 * {@code theType} is a floating point type and the value represents one of
-	 * the infinities or NaN, the well-defined {@code CFNumber} for that value
-	 * is returned. If either of {@code valuePtr} or {@code theType} is an
-	 * invalid value, the result is undefined.
+	 * Creates a CFNumber object using a specified value.
+	 * <p>
+	 * References are owned if created by functions including "Create" or "Copy"
+	 * and must be released with {@link #CFRelease} to avoid leaking references.
+	 * <p>
+	 * The type of number pointed to by the {@code valuePtr} is specified by
+	 * {@code theType}. The {@code theType} parameter is not necessarily
+	 * preserved when creating a new {@code CFNumber} object. The
+	 * {@code CFNumber} object will be created using whatever internal storage
+	 * type the creation function deems appropriate. Use the function
+	 * {@link #CFNumberGetType} to find out what type the {@code CFNumber}
+	 * object used to store your value.
+	 * <p>
+	 * If {@code theType} is a floating point type and the value represents one
+	 * of the infinities or {@code NaN}, the well-defined {@code CFNumber} for
+	 * that value is returned. If either of {@code valuePtr} or {@code theType}
+	 * is an invalid value, the result is undefined.
 	 *
-	 * @param allocator the {@code CFAllocator} to use when allocating memory.
-	 * @param theType the {@link CFNumberType} to create.
-	 * @param value the initial value of the created {@link CFNumberRef} as a
-	 *            {@link ByReference}.
+	 * @param allocator the {@code CFAllocator} to use to allocate memory for
+	 *            the new object. Pass {@code null} or
+	 *            {@link #kCFAllocatorDefault} to use the default allocator.
+	 * @param theType a constant that specifies the data type of the value to
+	 *            convert. See {@link CFNumberType} for a list of possible
+	 *            values.
+	 * @param valuePtr a {@link PointerType} to the value for the returned
+	 *            number object.
+	 * @return A new number with the value specified by {@code valuePtr}.
+	 *         Ownership follows the <a href=
+	 *         "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-103029"
+	 *         >The Create Rule</a>.
 	 */
-    CFNumberRef CFNumberCreate(CFAllocatorRef allocator, CFNumberType theType, PointerType value);
+    CFNumberRef CFNumberCreate(CFAllocatorRef allocator, CFNumberType theType, PointerType valuePtr);
 
 	/**
 	 * Returns the storage format {@link CFNumberType} of the {@code CFNumber}.
@@ -270,7 +407,7 @@ public interface CoreFoundation extends Library {
      * @param number the {@link CFNumberRef} whose size to return.
      * @return The size in bytes of the type of the number.
      */
-    int CFNumberGetByteSize(CFNumberRef number);
+    long CFNumberGetByteSize(CFNumberRef number);
 
 	/**
 	 * @param number the {@link CFNumberRef} to evaluate.
@@ -321,7 +458,7 @@ public interface CoreFoundation extends Library {
      *
      * @return The Core Foundation type identifier for {@code CFBoolean} opaque type.
      */
-    int CFBooleanGetTypeID();
+    long CFBooleanGetTypeID();
 
 	/**
 	 * Returns the value of a {@code CFBoolean} object as a standard C type {@code Boolean}.
@@ -346,7 +483,7 @@ public interface CoreFoundation extends Library {
 	 *
 	 * @return The type identifier for the {@code CFArray} opaque type.
 	 */
-    int CFArrayGetTypeID();
+    long CFArrayGetTypeID();
 
 	/**
 	 * Returns the number of values currently in the array.
@@ -355,7 +492,7 @@ public interface CoreFoundation extends Library {
 	 *            {@code CFArray}, the behavior is undefined.
 	 * @return The number of values in the array.
 	 */
-    int CFArrayGetCount(CFArrayRef array);
+    long CFArrayGetCount(CFArrayRef array);
 
 	/**
 	 * Retrieves the value at the given index.
@@ -367,7 +504,7 @@ public interface CoreFoundation extends Library {
 	 *            the count of the array), the behavior is undefined.
 	 * @return The value with the given index in the array.
 	 */
-    CFTypeRef CFArrayGetValueAtIndex(CFArrayRef theArray, int idx);
+    CFTypeRef CFArrayGetValueAtIndex(CFArrayRef theArray, long idx);
 
 	/**
 	 * Adds the value to the array giving it a new largest index.
@@ -402,7 +539,7 @@ public interface CoreFoundation extends Library {
 	 *            assigned to the given index, and all values with equal and
 	 *            larger indices have their indexes increased by one.
 	 */
-    void CFArrayInsertValueAtIndex(CFMutableArrayRef theArray, int idx, CFTypeRef value);
+    void CFArrayInsertValueAtIndex(CFMutableArrayRef theArray, long idx, CFTypeRef value);
 
 	/**
 	 * Changes the value with the given index in the array.
@@ -422,7 +559,7 @@ public interface CoreFoundation extends Library {
 	 *            callback, the behavior is undefined. The indices of other
 	 *            values is not affected.
 	 */
-    void CFArraySetValueAtIndex(CFMutableArrayRef theArray, int idx, CFTypeRef value);
+    void CFArraySetValueAtIndex(CFMutableArrayRef theArray, long idx, CFTypeRef value);
 
 	/**
 	 * Removes the value with the given index from the array.
@@ -435,7 +572,7 @@ public interface CoreFoundation extends Library {
 	 *            where N is the count of the array before the operation), the
 	 *            behavior is undefined.
 	 */
-	void CFArrayRemoveValueAtIndex(CFMutableArrayRef theArray, int idx);
+	void CFArrayRemoveValueAtIndex(CFMutableArrayRef theArray, long idx);
 
 	/**
 	 * Removes all the values from the array, making it empty.
@@ -461,13 +598,13 @@ public interface CoreFoundation extends Library {
 	 *            where N is the count of the array before the operation), the
 	 *            behavior is undefined.
 	 */
-	void CFArrayExchangeValuesAtIndices(CFMutableArrayRef theArray, int idx1, int idx2);
+	void CFArrayExchangeValuesAtIndices(CFMutableArrayRef theArray, long idx1, long idx2);
 
 	public class CFAllocatorRef extends CFTypeRef {
     }
 
     public class CFStringRef extends CFTypeRef {
-    	
+
         public CFStringRef() {
         	super();
         }
@@ -498,17 +635,17 @@ public interface CoreFoundation extends Library {
 			if (this.getPointer() == null) {
 				return "null";
 			}
-			int maxSize = Math.max(
+			long maxSize = Math.max(
 				INSTANCE.CFStringGetMaximumSizeForEncoding(
 					INSTANCE.CFStringGetLength(this),
-					CFStringBuiltInEncodings.kCFStringEncodingUTF8
+					CFStringBuiltInEncodings.kCFStringEncodingUTF8.getValue()
 				), 1
 			);
 			StringByReference buffer = new StringByReference(maxSize);
-			INSTANCE.CFStringGetCString(this, buffer, maxSize, CFStringBuiltInEncodings.kCFStringEncodingUTF8);
+			INSTANCE.CFStringGetCString(this, buffer, maxSize, CFStringBuiltInEncodings.kCFStringEncodingUTF8.getValue());
 			return buffer.getValue();
 		}
-		
+
 		/**
 		 * Use this as a substitute for cast from any {@link CFTypeRef}
 		 * instance.
@@ -519,7 +656,7 @@ public interface CoreFoundation extends Library {
 		 * {@link CFStringRef}'s constructor. This instantiates a new
 		 * {@link CFStringRef} and transfers the {@link Pointer} to achieve the
 		 * same result.
-		 * 
+		 *
 		 * @param cfType the {@link CFTypeRef} to "cast" to {@link CFStringRef}.
 		 * @return The {@link CFStringRef} instance.
 		 */
@@ -531,6 +668,15 @@ public interface CoreFoundation extends Library {
     public class CFMutableStringRef extends CFStringRef {
     }
 
+    /**
+     * Returns the type identifier for the {@code CFString} opaque type.
+     * <p>
+     * {@code CFMutableString} objects have the same type identifier as {@code CFString} objects.
+     *
+     * @return The type identifier for the {@code CFString} opaque type.
+     */
+    long CFStringGetTypeID();
+
 	/**
 	 * Creates an immutable string from a C string.
 	 * <p>
@@ -541,21 +687,23 @@ public interface CoreFoundation extends Library {
 	 * {@code null}. {@code Unichar} and {@code Unichar32} are not considered C
 	 * strings.
 	 *
+	 * @see CFStringBuiltInEncodings
+	 *
 	 * @param alloc the {@code CFAllocator} to use to allocate memory for the
 	 *            new string. Pass {@code null} or {@link #kCFAllocatorDefault}
 	 *            to use the current default allocator.
 	 * @param cStr the {@code null-terminated} C string to be used to create the
 	 *            {@code CFString} object. The string must use an 8-bit
 	 *            encoding.
-	 * @param encoding the encoding of the characters in the C string. The
-	 *            encoding must specify an 8-bit encoding.
+	 * @param encoding the {@code CFStringEncoding} of the characters in the C
+	 *            string. The encoding must specify an 8-bit encoding.
 	 * @return An immutable string containing {@code cStr} (after stripping off
 	 *         the {@code null} terminating character), or {@code null} if there
 	 *         was a problem creating the object. Ownership follows the <a href=
 	 *         "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-103029"
 	 *         >The Create Rule</a>.
 	 */
-    CFStringRef CFStringCreateWithCString(CFAllocatorRef alloc, String cStr, CFStringBuiltInEncodings encoding);
+    CFStringRef CFStringCreateWithCString(CFAllocatorRef alloc, String cStr, int encoding);
 
 	/**
 	 * Creates a string from a buffer containing characters in a specified
@@ -568,6 +716,8 @@ public interface CoreFoundation extends Library {
 	 * format by interpreting any BOM (byte order marker) character and
 	 * performing any necessary byte swapping.
 	 *
+	 * @see CFStringBuiltInEncodings
+	 *
 	 * @param alloc the {@code CFAllocator} to use to allocate memory for the
 	 *            new string. Pass {@code null} or {@link #kCFAllocatorDefault}
 	 *            to use the current default allocator.
@@ -576,7 +726,8 @@ public interface CoreFoundation extends Library {
 	 *            Pascal buffers) or any terminating {@code null} character (as
 	 *            in C buffers).
 	 * @param numBytes The number of bytes in {@code bytes}.
-	 * @param encoding The string encoding of the characters in {@code bytes}.
+	 * @param encoding The {@code CFStringEncoding} of the characters in
+	 *            {@code bytes}.
 	 * @param isExternalRepresentation {@code true} if the characters in the
 	 *            byte buffer are in an “external representation” format—that
 	 *            is, whether the buffer contains a BOM (byte order marker).
@@ -588,7 +739,7 @@ public interface CoreFoundation extends Library {
 	 *         "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-103029"
 	 *         >The Create Rule</a>.
 	 */
-    CFStringRef CFStringCreateWithBytes(CFAllocatorRef alloc, byte[] bytes, NativeLong numBytes, CFStringBuiltInEncodings encoding, boolean isExternalRepresentation);
+    CFStringRef CFStringCreateWithBytes(CFAllocatorRef alloc, byte[] bytes, long numBytes, int encoding, boolean isExternalRepresentation);
 
 	/**
 	 * Creates a string from a buffer of Unicode characters.
@@ -610,15 +761,15 @@ public interface CoreFoundation extends Library {
 	 *            to use the current default allocator.
 	 * @param chars The buffer of {@code Unicode} characters to copy into the
 	 *            new string.
-	 * @param length The number of characters in the buffer pointed to by chars.
-	 *            Only this number of characters will be copied to internal
-	 *            storage.
+	 * @param numChars The number of characters in the buffer pointed to by
+	 *            chars. Only this number of characters will be copied to
+	 *            internal storage.
 	 * @return An immutable string containing chars, or {@code null} if there
 	 *         was a problem creating the object. Ownership follows the <a href=
 	 *         "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-103029"
 	 *         >The Create Rule</a>.
 	 */
-    CFStringRef CFStringCreateWithCharacters(CFAllocatorRef alloc, char[] chars, int length);
+    CFStringRef CFStringCreateWithCharacters(CFAllocatorRef alloc, char[] chars, long numChars);
 
 	/**
 	 * Creates an immutable copy of a string.
@@ -677,10 +828,13 @@ public interface CoreFoundation extends Library {
 	 *         "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-103029"
 	 *         >The Create Rule</a>.
 	 */
-    CFMutableStringRef CFStringCreateMutable(CFAllocatorRef alloc, int maxLength);
+    CFMutableStringRef CFStringCreateMutable(CFAllocatorRef alloc, long maxLength);
 
 	/**
 	 * Creates a mutable copy of a string.
+	 * <p>
+	 * References are owned if created by functions including "Create" or "Copy"
+	 * and must be released with {@link #CFRelease} to avoid leaking references.
 	 * <p>
 	 * The returned mutable string is identical to the original string except
 	 * for (perhaps) the mutability attribute. You can add character data to the
@@ -707,7 +861,7 @@ public interface CoreFoundation extends Library {
 	 *         "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-103029"
 	 *         >The Create Rule</a>.
 	 */
-    CFMutableStringRef CFStringCreateMutableCopy(CFAllocatorRef alloc, int maxLength, CFStringRef theString);
+    CFMutableStringRef CFStringCreateMutableCopy(CFAllocatorRef alloc, long maxLength, CFStringRef theString);
 	/**
 	 * Returns the number (in terms of {@code UTF-16} code pairs) of
 	 * {@code Unicode} characters in a string.
@@ -716,7 +870,7 @@ public interface CoreFoundation extends Library {
 	 * @return The number (in terms of {@code UTF-16} code pairs) of characters
 	 *         stored in {@code theString}.
 	 */
-    int CFStringGetLength(CFStringRef str);
+    long CFStringGetLength(CFStringRef str);
 
 	/**
 	 * Returns the {@code Unicode} character at a specified location in a
@@ -746,6 +900,8 @@ public interface CoreFoundation extends Library {
 	 * character data as a C string. You also typically call it as a “backup”
 	 * when a prior call to the {@link #CFStringGetCStringPtr} function fails.
 	 *
+	 * @see CFStringBuiltInEncodings
+	 *
 	 * @param theString the {@code CFString} whose contents you wish to access.
 	 * @param buffer the C string buffer into which to copy the string. On
 	 *            return, the buffer contains the converted characters. If there
@@ -755,13 +911,18 @@ public interface CoreFoundation extends Library {
 	 *            example, if the string is {@code Toby}, the buffer must be at
 	 *            least 5 bytes long.
 	 * @param bufferSize the length of {@code buffer} in bytes.
-	 * @param encoding The string encoding to which the character contents of
-	 *            {@code theString} should be converted. The encoding must
-	 *            specify an 8-bit encoding.
+	 * @param encoding The {@code CFStringEncoding} to which the character
+	 *            contents of {@code theString} should be converted. The
+	 *            encoding must specify an 8-bit encoding.
 	 * @return {@code true} upon success or {@code false} if the conversion
 	 *         fails or the provided buffer is too small.
 	 */
-    boolean CFStringGetCString(CFStringRef theString, StringByReference buffer, int bufferSize, CFStringBuiltInEncodings encoding);
+    boolean CFStringGetCString(
+    	CFStringRef theString,
+    	StringByReference buffer,
+    	long bufferSize,
+    	int encoding
+    );
 
 	/**
 	 * Quickly obtains a pointer to a C-string buffer containing the characters
@@ -778,15 +939,17 @@ public interface CoreFoundation extends Library {
 	 * not count on receiving a non-{@code null} result from this function under
 	 * any circumstances.
 	 *
+	 * @see CFStringBuiltInEncodings
+	 *
 	 * @param theString the {@code CFString} whose contents you wish to access.
-	 * @param encoding the string encoding to which the character contents of
-	 *            {@code theString} should be converted. The encoding must
-	 *            specify an 8-bit encoding.
+	 * @param encoding the {@code CFStringEncoding} to which the character
+	 *            contents of {@code theString} should be converted. The
+	 *            encoding must specify an 8-bit encoding.
 	 * @return A pointer to a C string or {@code null} if the internal storage
 	 *         of {@code theString} does not allow this to be returned
 	 *         efficiently.
 	 */
-    StringByReference CFStringGetCStringPtr(CFStringRef theString, CFStringBuiltInEncodings encoding);
+    StringByReference CFStringGetCStringPtr(CFStringRef theString, int encoding);
 
 	/**
 	 * Quickly obtains a pointer to the contents of a string as a buffer of
@@ -820,11 +983,15 @@ public interface CoreFoundation extends Library {
 	 * the character contents of a string. This information is not always
 	 * immediately available, so this function might need to compute it (result
 	 * in O(n) time max).
+	 * <p>
+	 * {@code CFStringEncoding} translates to {@link Integer}.
+	 *
+	 * @see CFStringBuiltInEncodings
 	 *
 	 * @param theString the string for which to find the smallest encoding.
-	 * @return The string encoding that has the smallest representation of
-	 *         {@code theString}. Use {@link CFStringBuiltInEncodings#typeOf} to
-	 *         interpret the result if the encoding is among the "built-in"
+	 * @return The {@code CFStringEncoding} that has the smallest representation
+	 *         of {@code theString}. Use {@link CFStringBuiltInEncodings#typeOf}
+	 *         to interpret the result if the encoding is among the "built-in"
 	 *         encodings.
 	 */
     int CFStringGetSmallestEncoding(CFStringRef theString);
@@ -835,12 +1002,16 @@ public interface CoreFoundation extends Library {
 	 * <p>
 	 * This is faster than {@link #CFStringGetSmallestEncoding} (result in O(1)
 	 * time max).
+	 * <p>
+	 * {@code CFStringEncoding} translates to {@link Integer}.
+	 *
+	 * @see CFStringBuiltInEncodings
 	 *
 	 * @param theString the string for which to determine the fastest encoding.
-	 * @return The string encoding to which {@code theString} can be converted
-	 *         the fastest. Use {@link CFStringBuiltInEncodings#typeOf} to
-	 *         interpret the result if the encoding is among the "built-in"
-	 *         encodings.
+	 * @return The {@code CFStringEncoding} to which {@code theString} can be
+	 *         converted the fastest. Use
+	 *         {@link CFStringBuiltInEncodings#typeOf} to interpret the result
+	 *         if the encoding is among the "built-in" encodings.
 	 */
     int CFStringGetFastestEncoding(CFStringRef theString);
 
@@ -870,10 +1041,11 @@ public interface CoreFoundation extends Library {
 	/**
 	 * Returns the maximum number of bytes a string of a specified length (in
 	 * Unicode characters) will take up if encoded in a specified encoding.
-	 * <p>
+	 *
+	 * @see CFStringBuiltInEncodings
 	 *
 	 * @param length the number of {@code Unicode} characters to evaluate.
-	 * @param encoding the string encoding for the number of characters
+	 * @param encoding the {@code CFStringEncoding} for the number of characters
 	 *            specified by length.
 	 * @return The maximum number of bytes that could be required to represent
 	 *         length number of {@code Unicode} characters with the string
@@ -881,7 +1053,7 @@ public interface CoreFoundation extends Library {
 	 *         ends up requiring when converting any particular string could be
 	 *         less than this, but never more.
 	 */
-    int CFStringGetMaximumSizeForEncoding(int length, CFStringBuiltInEncodings encoding);
+    long CFStringGetMaximumSizeForEncoding(long length, int encoding);
 
 	/**
 	 * Extracts the contents of a string as a {@code null}-terminated 8-bit
@@ -900,7 +1072,7 @@ public interface CoreFoundation extends Library {
 	 *         if the conversion fails, or the results don’t fit into the
 	 *         buffer.
 	 */
-    boolean CFStringGetFileSystemRepresentation(CFStringRef string, StringByReference buffer, int maxBufLen);
+    boolean CFStringGetFileSystemRepresentation(CFStringRef string, StringByReference buffer, long maxBufLen);
 
 	/**
 	 * Determines the upper bound on the number of bytes required to hold the
@@ -916,11 +1088,14 @@ public interface CoreFoundation extends Library {
 	 * @return The upper bound on the number of bytes required to hold the file
 	 *         system representation of the string.
 	 */
-    int CFStringGetMaximumSizeOfFileSystemRepresentation(CFStringRef string);
+    long CFStringGetMaximumSizeOfFileSystemRepresentation(CFStringRef string);
 
 	/**
 	 * Creates a {@code CFString} from a {@code null}-terminated {@code POSIX}
 	 * file system representation.
+	 * <p>
+	 * References are owned if created by functions including "Create" or "Copy"
+	 * and must be released with {@link #CFRelease} to avoid leaking references.
 	 *
 	 * @param alloc the {@code CFAllocator} to use to allocate memory for the
 	 *            new string. Pass {@code null} or {@link #kCFAllocatorDefault}
@@ -955,11 +1130,188 @@ public interface CoreFoundation extends Library {
 	 */
     CFComparisonResult CFStringCompare(CFStringRef theString1, CFStringRef theString2, int compareOptions);
 
+	/**
+	 * Determines whether a given Core Foundation string encoding is available
+	 * on the current system.
+	 *
+	 * @see CFStringBuiltInEncodings
+	 *
+	 * @param encoding the {@code CFStringEncoding} to test.
+	 * @return {@code true} if the encoding is available, otherwise
+	 *         {@code false}.
+	 */
+    boolean CFStringIsEncodingAvailable(int encoding);
+
+	/**
+	 * Returns a pointer to a list of {@code CFStringEncoding} supported by the
+	 * current system. {@code CFStringEncoding} translates to {@link Integer}.
+	 * <p>
+	 * {@code CFStringEncoding} translates to {@link Integer}.
+	 *
+	 * @see CFStringBuiltInEncodings
+	 *
+	 * @return A pointer to a
+	 *         {@link CFStringBuiltInEncodings#kCFStringEncodingInvalidId}
+	 *         -terminated list of enum constants, each of type
+	 *         {@code CFStringEncoding}.
+	 */
+    int[] CFStringGetListOfAvailableEncodings();
+
+	/**
+	 * Returns the canonical name of a specified string encoding.
+	 * <p>
+	 * References are owned if created by functions including "Create" or "Copy"
+	 * and must be released with {@link #CFRelease} to avoid leaking references.
+	 * <p>
+	 * This function returns the “canonical” name of the string encoding because
+	 * the return value has to be the same no matter what localization is
+	 * chosen. In other words, it can't change based on the International
+	 * Preferences language panel setting. The canonical name is usually
+	 * expressed in English.
+	 *
+	 * @see CFStringBuiltInEncodings
+	 *
+	 * @param encoding the {@code CFStringEncoding} to use.
+	 * @return The name of the encoding; non-localized. Ownership follows the <a
+	 *         href=
+	 *         "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-103029"
+	 *         >The Create Rule</a>.
+	 */
+    CFStringRef CFStringGetNameOfEncoding(int encoding);
+
+	/**
+	 * Returns the Cocoa encoding constant that maps most closely to a given
+	 * Core Foundation encoding constant.
+	 * <p>
+	 * The {@link #CFStringConvertNSStringEncodingToEncoding} function is
+	 * complementary to this function.
+	 *
+	 * @see CFStringBuiltInEncodings
+	 *
+	 * @param encoding the {@code CFStringEncoding} to use.
+	 * @return The Cocoa encoding (of type {@code NSStringEncoding}) that is
+	 *         closest to the {@code CFStringEncoding}. The behavior is
+	 *         undefined if an invalid {@code NSStringEncoding} is passed.
+	 */
+    NativeLong CFStringConvertEncodingToNSStringEncoding(int encoding);
+
+	/**
+	 * Returns the Core Foundation encoding constant that is the closest mapping
+	 * to a given Cocoa encoding.
+	 * <p>
+	 * The {@link #CFStringConvertEncodingToNSStringEncoding} function is
+	 * complementary to this function.
+	 * <p>
+	 * {@code CFStringEncoding} translates to {@link Integer}.
+	 *
+	 * @see CFStringBuiltInEncodings
+	 *
+	 * @param encoding the Cocoa string encoding (of type
+	 *            {@code NSStringEncoding}) to use.
+	 * @return The {@code CFStringEncoding} that is closest to the
+	 *         {@code NSStringEncoding}. Returns the
+	 *         {@link CFStringBuiltInEncodings#kCFStringEncodingInvalidId}
+	 *         constant if the mapping is not known.
+	 */
+    int CFStringConvertNSStringEncodingToEncoding(NativeLong encoding);
+
+	/**
+	 * Returns the {@code Windows codepage identifier} that maps most closely to
+	 * a given Core Foundation encoding constant.
+	 * <p>
+	 * The {@link #CFStringConvertWindowsCodepageToEncoding} function is
+	 * complementary to this function.
+	 *
+	 * @see CFStringBuiltInEncodings
+	 *
+	 * @param encoding the {@code CFStringEncoding} to use.
+	 * @return The {@code Windows codepage} value that is closest to the
+	 *         {@code CFStringEncoding}. The behavior is undefined if an invalid
+	 *         {@code CFStringEncoding} is passed.
+	 */
+    int CFStringConvertEncodingToWindowsCodepage(int encoding);
+
+	/**
+	 * Returns the Core Foundation encoding constant that is the closest mapping
+	 * to a given {@code Windows codepage identifier}.
+	 * <p>
+	 * The {@link #CFStringConvertEncodingToWindowsCodepage} function is
+	 * complementary to this function.
+	 * <p>
+	 * {@code CFStringEncoding} translates to {@link Integer}.
+	 *
+	 * @see CFStringBuiltInEncodings
+	 *
+	 * @param codepage the {@code Windows codepage identifier} to use.
+	 * @return The {@code CFStringEncoding} that is closest to {@code codepage}.
+	 *         Returns the
+	 *         {@link CFStringBuiltInEncodings#kCFStringEncodingInvalidId}
+	 *         constant if the mapping is not known.
+	 */
+    int CFStringConvertWindowsCodepageToEncoding(int codepage);
+
+	/**
+	 * Returns the Core Foundation encoding constant that is the closest mapping
+	 * to a given IANA registry “charset” name.
+	 * <p>
+	 * The {@link #CFStringConvertEncodingToIANACharSetName} function is
+	 * complementary to this function.
+	 * <p>
+	 * {@code CFStringEncoding} translates to {@link Integer}.
+	 *
+	 * @see CFStringBuiltInEncodings
+	 *
+	 * @param ianaName the IANA “charset” name to use.
+	 * @return The {@code CFStringEncoding} that is closest to the IANA
+	 *         “charset” {@code ianaName}. Returns the
+	 *         {@link CFStringBuiltInEncodings#kCFStringEncodingInvalidId}
+	 *         constant if the name is not recognized.
+	 */
+    int CFStringConvertIANACharSetNameToEncoding(CFStringRef ianaName);
+
+	/**
+	 * Returns the name of the IANA registry “charset” that is the closest
+	 * mapping to a specified Core Foundation encoding constant.
+	 * <p>
+	 * The {@link #CFStringConvertIANACharSetNameToEncoding} function is
+	 * complementary to this function.
+	 *
+	 * @see CFStringBuiltInEncodings
+	 *
+	 * @param encoding The {@code CFStringEncoding} to use.
+	 * @return The name of the IANA “charset” that is the closest mapping to
+	 *         {@code encoding}. Returns {@code null} if the encoding is not
+	 *         recognized.
+	 */
+    CFStringRef CFStringConvertEncodingToIANACharSetName(int encoding);
+
+	/**
+	 * Returns the most compatible Mac OS script value for the given Core
+	 * Foundation encoding constant.
+	 *
+	 * @see CFStringBuiltInEncodings
+	 *
+	 * @param encoding The {@code CFStringEncoding} for which you wish to find a
+	 *            compatible Mac OS script value.
+	 * @return The most compatible Mac OS script value for {@code encoding}.
+	 */
+    int CFStringGetMostCompatibleMacStringEncoding(int encoding);
+
     public class CFDictionaryRef extends CFTypeRef {
     }
 
     public class CFMutableDictionaryRef extends CFDictionaryRef {
     }
+
+	/**
+	 * Returns the type identifier for the CFDictionary opaque type.
+	 * <p>
+	 * CFMutableDictionary objects have the same type identifier as CFDictionary
+	 * objects.
+	 *
+	 * @return The type identifier for the CFDictionary opaque type.
+	 */
+    long CFDictionaryGetTypeID();
 
 	/**
 	 * Creates a new immutable dictionary with the key-value pairs from the
@@ -1062,7 +1414,7 @@ public interface CoreFoundation extends Library {
 	 */
 	CFMutableDictionaryRef CFDictionaryCreateMutable(
 		CFAllocatorRef allocator,
-		int capacity,
+		long capacity,
 		Pointer keyCallBacks,
 		Pointer valueCallBacks
 	);
@@ -1099,7 +1451,7 @@ public interface CoreFoundation extends Library {
 	 */
 	CFMutableDictionaryRef CFDictionaryCreateMutableCopy(
 		CFAllocatorRef allocator,
-		int capacity,
+		long capacity,
 		CFDictionaryRef theDict
 	);
 
@@ -1110,7 +1462,7 @@ public interface CoreFoundation extends Library {
 	 *            valid {@code CFDictionary}, the behavior is undefined.
 	 * @return The number of values in the dictionary.
 	 */
-	int CFDictionaryGetCount(CFDictionaryRef theDict);
+	long CFDictionaryGetCount(CFDictionaryRef theDict);
 
 	/**
 	 * Counts the number of times the given key occurs in the dictionary.
@@ -1129,7 +1481,7 @@ public interface CoreFoundation extends Library {
 	 * @return {@code 1} if a matching key is used by the dictionary, {@code 0}
 	 *         otherwise.
 	 */
-	int CFDictionaryGetCountOfKey(CFDictionaryRef theDict, CFTypeRef key);
+	long CFDictionaryGetCountOfKey(CFDictionaryRef theDict, CFTypeRef key);
 
 	/**
 	 * Counts the number of times the given value occurs in the dictionary.
@@ -1145,7 +1497,7 @@ public interface CoreFoundation extends Library {
 	 *            is undefined.
 	 * @return The number of times the given value occurs in the dictionary.
 	 */
-	int CFDictionaryGetCountOfValue(CFDictionaryRef theDict, CFTypeRef value);
+	long CFDictionaryGetCountOfValue(CFDictionaryRef theDict, CFTypeRef value);
 
 	/**
 	 * Reports whether or not the key is in the dictionary.
@@ -1340,6 +1692,9 @@ public interface CoreFoundation extends Library {
 	/**
 	 * Gets the default allocator object for the current thread.
 	 * <p>
+	 * References are owned if created by functions including "Create" or "Copy"
+	 * and must be released with {@link #CFRelease} to avoid leaking references.
+	 * <p>
 	 * See the discussion for <a href=
 	 * "https://developer.apple.com/reference/corefoundation/1521134-cfallocatorsetdefault?language=objc"
 	 * >CFAllocatorSetDefault</a> for more detail on the default allocator and
@@ -1372,11 +1727,14 @@ public interface CoreFoundation extends Library {
 	 *
 	 * @return The type identifier for the {@code CFData} opaque type.
 	 */
-    int CFDataGetTypeID();
+    long CFDataGetTypeID();
 
 	/**
 	 * Creates an immutable {@code CFData} object using data copied from a
 	 * specified byte buffer.
+	 * <p>
+	 * References are owned if created by functions including "Create" or "Copy"
+	 * and must be released with {@link #CFRelease} to avoid leaking references.
 	 * <p>
 	 * You must supply a count of the bytes in the buffer. This function always
 	 * copies the bytes in the provided buffer into internal storage.
@@ -1393,10 +1751,13 @@ public interface CoreFoundation extends Library {
 	 *         "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-103029"
 	 *         >The Create Rule</a>.
 	 */
-    CFDataRef CFDataCreate(CFAllocatorRef allocator, byte[] bytes, int length);
+    CFDataRef CFDataCreate(CFAllocatorRef allocator, byte[] bytes, long length);
 
 	/**
 	 * Creates an immutable copy of a {@code CFData} object.
+	 * <p>
+	 * References are owned if created by functions including "Create" or "Copy"
+	 * and must be released with {@link #CFRelease} to avoid leaking references.
 	 * <p>
 	 * The resulting object has the same byte contents as the original object,
 	 * but it is always immutable. If the specified allocator and the allocator
@@ -1423,6 +1784,9 @@ public interface CoreFoundation extends Library {
 	/**
 	 * Creates an empty {@code CFMutableData} object.
 	 * <p>
+	 * References are owned if created by functions including "Create" or "Copy"
+	 * and must be released with {@link #CFRelease} to avoid leaking references.
+	 * <p>
 	 * This function creates an empty (that is, content-less)
 	 * {@code CFMutableData} object. You can add raw data to this object with
 	 * the {@link #CFDataAppendBytes} function, and thereafter you can replace
@@ -1444,11 +1808,14 @@ public interface CoreFoundation extends Library {
 	 *         "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-103029"
 	 *         >The Create Rule</a>.
 	 */
-    CFMutableDataRef CFDataCreateMutable(CFAllocatorRef allocator, int capacity);
+    CFMutableDataRef CFDataCreateMutable(CFAllocatorRef allocator, long capacity);
 
 	/**
 	 * Creates a {@code CFMutableData} object by copying another {@code CFData}
 	 * object.
+	 * <p>
+	 * References are owned if created by functions including "Create" or "Copy"
+	 * and must be released with {@link #CFRelease} to avoid leaking references.
 	 *
 	 * @param allocator the {@code CFAllocator} to use to allocate memory for
 	 *            the new object. Pass {@code null} or
@@ -1468,7 +1835,7 @@ public interface CoreFoundation extends Library {
 	 *         "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-103029"
 	 *         >The Create Rule</a>.
 	 */
-    CFMutableDataRef CFDataCreateMutableCopy(CFAllocatorRef allocator, int capacity, CFDataRef theData);
+    CFMutableDataRef CFDataCreateMutableCopy(CFAllocatorRef allocator, long capacity, CFDataRef theData);
 
 	/**
 	 * Returns the number of bytes contained by a {@code CFData} object.
@@ -1476,7 +1843,7 @@ public interface CoreFoundation extends Library {
 	 * @param theData the {@code CFData} object to examine.
 	 * @return The number of bytes in {@code theData}.
 	 */
-    int CFDataGetLength(CFTypeRef theData);
+    long CFDataGetLength(CFTypeRef theData);
 
 	/**
 	 * Returns a read-only pointer to the bytes of a {@code CFData} object.
@@ -1521,7 +1888,7 @@ public interface CoreFoundation extends Library {
 	 *            {@code CFData} object, the behavior is not defined.
 	 * @param length the new size of {@code theData}’s byte buffer.
 	 */
-    void CFDataSetLength(CFMutableDataRef theData, int length);
+    void CFDataSetLength(CFMutableDataRef theData, long length);
 
 	/**
 	 * Increases the length of a {@code CFMutableData} object's internal byte
@@ -1535,7 +1902,7 @@ public interface CoreFoundation extends Library {
 	 * @param extraLength the number of bytes by which to increase the byte
 	 *            buffer.
 	 */
-    void CFDataIncreaseLength(CFMutableDataRef theData, int extraLength);
+    void CFDataIncreaseLength(CFMutableDataRef theData, long extraLength);
 
 	/**
 	 * Appends the bytes from a byte buffer to the contents of a {@code CFData}
@@ -1547,7 +1914,7 @@ public interface CoreFoundation extends Library {
 	 *            {@code theData}.
 	 * @param length The number of bytes in the byte buffer {@code bytes}.
 	 */
-    void CFDataAppendBytes(CFMutableDataRef theData, byte[] bytes, int length);
+    void CFDataAppendBytes(CFMutableDataRef theData, byte[] bytes, long length);
 
 	/**
 	 * This represents the {@code CF_ENUM} with the same name.
@@ -1556,7 +1923,7 @@ public interface CoreFoundation extends Library {
 	 * value. Use {@link #typeOf} to convert an integer value to a
 	 * {@link CFNumberType}.
 	 */
-    public enum CFNumberType implements JnaIntEnum<CFNumberType> {
+    public enum CFNumberType implements JnaLongEnum<CFNumberType> {
         /** Eight-bit, signed integer. The {@code SInt8} data type is defined in {@code MacTypes.h}. */
         kCFNumberSInt8Type(1),
         /** Sixteen-bit, signed integer. The {@code SInt16} data type is defined in {@code MacTypes.h}. */
@@ -1598,23 +1965,23 @@ public interface CoreFoundation extends Library {
         /** Same as {@code cgFloatType}. */
     	kCFNumberMaxType(16);
 
-        private final int value;
+        private final long value;
 
         private CFNumberType(int value) {
         	this.value = value;
         }
 
         @Override
-        public int getValue() {
+        public long getValue() {
         	return value;
         }
 
 		@Override
-		public CFNumberType typeForValue(int value) {
+		public CFNumberType typeForValue(long value) {
 			return typeOf(value);
 		}
 
-		public static CFNumberType typeOf(int value) {
+		public static CFNumberType typeOf(long value) {
         	for (CFNumberType entry : CFNumberType.values()) {
         		if (value == entry.getValue()) {
         			return entry;
@@ -1668,6 +2035,7 @@ public interface CoreFoundation extends Library {
 		kCFStringEncodingUTF32BE(0x18000100),
 		/** kTextEncodingUnicodeDefault + kUnicodeUTF32LEFormat */
 		kCFStringEncodingUTF32LE(0x1c000100),
+		/** Invalid encoding */
 		kCFStringEncodingInvalidId(0xffffffff);
 
     	private final int value;
@@ -1700,10 +2068,10 @@ public interface CoreFoundation extends Library {
 	 * This represents the {@code CF_ENUM} with the same name.
 	 * <p>
 	 * Use {@link #getValue()} to convert a {@link CFStringCompareFlags} to its
-	 * integer value. Use {@link #typeOf} to convert an integer value to a
+	 * long value. Use {@link #typeOf} to convert a long value to a
 	 * {@link CFStringCompareFlags}.
 	 */
-    public enum CFStringCompareFlags implements JnaIntEnum<CFStringCompareFlags> {
+    public enum CFStringCompareFlags implements JnaLongEnum<CFStringCompareFlags> {
 	    kCFCompareCaseInsensitive(1),
 		/** Starting from the end of the string */
 	    kCFCompareBackwards(4),
@@ -1738,22 +2106,22 @@ public interface CoreFoundation extends Library {
 		 */
 	    kCFCompareForcedOrdering(512);
 
-	    private final int value;
+	    private final long value;
 
-	    private CFStringCompareFlags(int value) {
+	    private CFStringCompareFlags(long value) {
 	    	this.value = value;
 	    }
 
 		@Override
-		public int getValue() {
+		public long getValue() {
 			return value;
 		}
 		@Override
-		public CFStringCompareFlags typeForValue(int value) {
+		public CFStringCompareFlags typeForValue(long value) {
 			return typeOf(value);
 		}
 
-		public static CFStringCompareFlags typeOf(int value) {
+		public static CFStringCompareFlags typeOf(long value) {
         	for (CFStringCompareFlags entry : CFStringCompareFlags.values()) {
         		if (value == entry.getValue()) {
         			return entry;
@@ -1767,10 +2135,10 @@ public interface CoreFoundation extends Library {
 	 * This represents the {@code CF_ENUM} with the same name.
 	 * <p>
 	 * Use {@link #getValue()} to convert a {@link CFStringNormalizationForm} to
-	 * its integer value. Use {@link #typeOf} to convert an integer value to a
+	 * its long value. Use {@link #typeOf} to convert an long value to a
 	 * {@link CFStringNormalizationForm}.
 	 */
-    public enum CFStringNormalizationForm implements JnaIntEnum<CFStringNormalizationForm> {
+    public enum CFStringNormalizationForm implements JnaLongEnum<CFStringNormalizationForm> {
     	/** Canonical Decomposition */
     	kCFStringNormalizationFormD(0),
     	/** Compatibility Decomposition */
@@ -1780,24 +2148,70 @@ public interface CoreFoundation extends Library {
 		/** Compatibility Decomposition followed by Canonical Composition */
 		kCFStringNormalizationFormKC(3);
 
-    	private final int value;
+    	private final long value;
 
-		private CFStringNormalizationForm(int value) {
+		private CFStringNormalizationForm(long value) {
 			this.value = value;
 		}
 
 		@Override
-		public int getValue() {
+		public long getValue() {
 			return value;
 		}
 
 		@Override
-		public CFStringNormalizationForm typeForValue(int value) {
+		public CFStringNormalizationForm typeForValue(long value) {
 			return typeOf(value);
 		}
 
-		public static CFStringNormalizationForm typeOf(int value) {
+		public static CFStringNormalizationForm typeOf(long value) {
         	for (CFStringNormalizationForm entry : CFStringNormalizationForm.values()) {
+        		if (value == entry.getValue()) {
+        			return entry;
+        		}
+        	}
+        	return null;
+        }
+    }
+
+	/**
+	 * This represents the {@code CF_ENUM} with the same name.
+	 * <p>
+	 * Use {@link #getValue()} to convert a {@link CFDataSearchFlags} to its
+	 * long value. Use {@link #typeOf} to convert a long value to a
+	 * {@link CFDataSearchFlags}.
+	 *
+	 * @since OS X 10.6
+	 */
+    public enum CFDataSearchFlags implements JnaLongEnum<CFDataSearchFlags> {
+    	/** Performs searching from the end of the range toward the beginning. */
+    	kCFDataSearchBackwards(1L << 0),
+		/**
+		 * Performs searching only on bytes at the beginning or, if
+		 * {@link #kCFDataSearchBackwards} is also specified, at the end of the
+		 * search range. No match at the beginning or end means nothing is
+		 * found, even if a matching sequence of bytes occurs elsewhere in the
+		 * data object.
+		 */
+    	kCFDataSearchAnchored(1L << 1);
+
+	    private final long value;
+
+	    private CFDataSearchFlags(long value) {
+	    	this.value = value;
+	    }
+
+		@Override
+		public long getValue() {
+			return value;
+		}
+		@Override
+		public CFDataSearchFlags typeForValue(long value) {
+			return typeOf(value);
+		}
+
+		public static CFDataSearchFlags typeOf(long value) {
+        	for (CFDataSearchFlags entry : CFDataSearchFlags.values()) {
         		if (value == entry.getValue()) {
         			return entry;
         		}
@@ -1810,10 +2224,10 @@ public interface CoreFoundation extends Library {
 	 * This represents the value of a {@code CFComparisonResult}.
 	 * <p>
 	 * Use {@link #getValue()} to convert a {@link CFComparisonResult} to its
-	 * integer value. Use {@link #typeOf} to convert an integer value to a
+	 * long value. Use {@link #typeOf} to convert an long value to a
 	 * {@link CFComparisonResult}.
 	 */
-    public enum CFComparisonResult implements JnaIntEnum<CFComparisonResult> {
+    public enum CFComparisonResult implements JnaLongEnum<CFComparisonResult> {
     	/** Returned by a comparison function if the first value is less than the second value. */
     	kCFCompareLessThan(-1),
     	/** Returned by a comparison function if the first value is equal to the second value. */
@@ -1828,16 +2242,16 @@ public interface CoreFoundation extends Library {
 		}
 
 		@Override
-		public int getValue() {
+		public long getValue() {
 			return value;
 		}
 
 		@Override
-		public CFComparisonResult typeForValue(int value) {
+		public CFComparisonResult typeForValue(long value) {
 			return typeOf(value);
 		}
 
-		public static CFComparisonResult typeOf(int value) {
+		public static CFComparisonResult typeOf(long value) {
 			if (value > 0) {
 				return kCFCompareGreaterThan;
 			}

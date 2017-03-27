@@ -23,31 +23,31 @@ import com.sun.jna.ToNativeContext;
 import com.sun.jna.TypeConverter;
 
 /**
- * Performs conversion between {@link JnaIntEnum} and native enums.
+ * Performs conversion between {@link JnaLongEnum} and native enums.
  *
  * @author Nadahar
  */
 
-public class JnaIntEnumConverter implements TypeConverter{
+public class JnaLongEnumConverter implements TypeConverter{
 
     @Override
 	public Object fromNative(Object input, FromNativeContext context) {
-    	if (!JnaIntEnum.class.isAssignableFrom(context.getTargetType())) {
-            throw new IllegalStateException("JnaIntEnumConverter can only convert objects implementing JnaIntEnum");
+    	if (!JnaLongEnum.class.isAssignableFrom(context.getTargetType())) {
+            throw new IllegalStateException("JnaLongEnumConverter can only convert objects implementing JnaLongEnum");
         }
 		@SuppressWarnings("rawtypes")
 		Class targetClass = context.getTargetType();
         Object[] enumValues = targetClass.getEnumConstants();
-        return ((JnaIntEnum<?>) enumValues[0]).typeForValue((int) input);
+        return ((JnaLongEnum<?>) enumValues[0]).typeForValue((long) input);
     }
 
     @Override
-	public Class<Integer> nativeType() {
-        return Integer.class;
+	public Class<Long> nativeType() {
+        return Long.class;
     }
 
     @Override
-	public Integer toNative(Object input, ToNativeContext context) {
-        return ((JnaIntEnum<?>) input).getValue();
+	public Long toNative(Object input, ToNativeContext context) {
+        return ((JnaLongEnum<?>) input).getValue();
     }
 }

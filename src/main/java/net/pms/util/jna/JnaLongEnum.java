@@ -18,13 +18,11 @@
  */
 package net.pms.util.jna;
 
-import com.sun.jna.DefaultTypeMapper;
-
-
-public class JnaEnumTypeMapper extends DefaultTypeMapper {
-
-	{
-		addTypeConverter(JnaIntEnum.class, new JnaIntEnumConverter());
-		addTypeConverter(JnaLongEnum.class, new JnaLongEnumConverter());
-	}
+/**
+ * This interface provides the possibility for automatic conversion between
+ * {@link Enum} and C-style long long enums.
+ */
+public interface JnaLongEnum<T> {
+	long getValue();
+	T typeForValue(long value);
 }
