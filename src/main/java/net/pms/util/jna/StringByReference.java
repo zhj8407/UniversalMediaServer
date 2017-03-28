@@ -65,7 +65,7 @@ public class StringByReference extends PointerType {
 	 * @param charset the {@link Charset} to use for encoding.
 	 */
 	public StringByReference(String value, Charset charset) {
-		super(value == null ? Pointer.NULL : new Memory(value.getBytes(charset).length + 1));
+		super();
 		if (value != null) {
 			setValue(value, charset);
 		}
@@ -79,7 +79,7 @@ public class StringByReference extends PointerType {
 	 * @param charsetName the name of the {@link Charset} to use for encoding.
 	 */
 	public StringByReference(String value, String charsetName) {
-		super(value == null ? Pointer.NULL : new Memory(value.getBytes(Charset.forName(charsetName)).length + 1));
+		super();
 		if (value != null) {
 			setValue(value, charsetName);
 		}
@@ -87,14 +87,12 @@ public class StringByReference extends PointerType {
 
 	/**
 	 * Sets this {@link StringByReference}'s content to that of {@code value}
-	 * using encoding {@link Native#getDefaultStringEncoding}. Make sure that
-	 * sufficient space is allocated, or an {@link IllegalArgumentException}
-	 * will be thrown.
+	 * using encoding {@link Native#getDefaultStringEncoding}. If there's enough
+	 * space in the already allocated memory, the content will be written there.
+	 * If not a new area will be allocated and the {@link Pointer} updated.
 	 *
 	 * @param value the new string content.
 	 * @param charset a supported {@link Charset} to use for encoding.
-	 * @throws IllegalArgumentException if the new content is larger then the
-	 *             currently allocated memory or the encoding is unsupported.
 	 */
 	public void setValue(String value) {
 		setValue(value, Native.getDefaultStringEncoding());
@@ -102,13 +100,12 @@ public class StringByReference extends PointerType {
 
 	/**
 	 * Sets this {@link StringByReference}'s content to that of {@code value}.
-	 * Make sure that sufficient space is allocated, or an
-	 * {@link IllegalArgumentException} will be thrown.
+	 * If there's enough space in the already allocated memory, the content will
+	 * be written there. If not a new area will be allocated and the
+	 * {@link Pointer} updated.
 	 *
 	 * @param value the new string content.
 	 * @param charset a supported {@link Charset} to use for encoding.
-	 * @throws IllegalArgumentException if the new content is larger then the
-	 *             currently allocated memory or the encoding is unsupported.
 	 */
 	public void setValue(String value, Charset charset) {
 		setValue(value, charset.name());
@@ -116,24 +113,19 @@ public class StringByReference extends PointerType {
 
 	/**
 	 * Sets this {@link StringByReference}'s content to that of {@code value}.
-	 * Make sure that sufficient space is allocated, or an
-	 * {@link IllegalArgumentException} will be thrown.
+	 * If there's enough space in the already allocated memory, the content will
+	 * be written there. If not a new area will be allocated and the
+	 * {@link Pointer} updated.
 	 *
 	 * @param value the new string content.
 	 * @param charsetName a valid and supported {@link Charset} name to use for
 	 *            encoding.
-	 * @throws IllegalArgumentException if the new content is larger then the
-	 *             currently allocated memory or the encoding is unsupported.
 	 */
     public void setValue(String value, String charsetName) {
     	try {
-			if (value.getBytes(charsetName).length > getAllocatedSize()) {
-				throw new IllegalArgumentException(
-					"String length " +
-					value.getBytes(charsetName).length +
-					" exceeds allocated size " +
-					getAllocatedSize()
-				);
+    		int length = value.getBytes(charsetName).length;
+			if (length > getAllocatedSize()) {
+				setPointer(new Memory(length + 1));
 			}
 		} catch (UnsupportedEncodingException e) {
 			throw new IllegalArgumentException("Unsupported encoding: " + charsetName, e);
@@ -193,12 +185,7 @@ public class StringByReference extends PointerType {
         if (nativeValue == null) {
             return null;
         }
-    	if (getPointer() == null) {
-    		StringByReference sbr = new StringByReference();
-    		sbr.setPointer((Pointer) nativeValue);
-    		return sbr;
-    	}
-    	this.setPointer((Pointer) nativeValue);
+    	setPointer((Pointer) nativeValue);
     	return this;
 	}
 

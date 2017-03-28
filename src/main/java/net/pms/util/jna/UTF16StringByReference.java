@@ -20,17 +20,16 @@ package net.pms.util.jna;
 
 import com.sun.jna.FromNativeContext;
 import com.sun.jna.Memory;
-import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.PointerType;
 
 
-public class WStringByReference extends PointerType {
+public class UTF16StringByReference extends PointerType {
 
 	/**
-	 * Creates an unallocated {@link WStringByReference}.
+	 * Creates an unallocated {@link UTF16StringByReference}.
 	 */
-	public WStringByReference() {
+	public UTF16StringByReference() {
 		super();
 	}
 
@@ -38,17 +37,17 @@ public class WStringByReference extends PointerType {
 	 * @param dataSize the size to allocate in bytes excluding the {@code null}
 	 *            terminator.
 	 */
-	public WStringByReference(long dataSize) {
-		super(dataSize < 1 ? Pointer.NULL : new Memory(dataSize + Native.WCHAR_SIZE));
+	public UTF16StringByReference(long dataSize) {
+		super(dataSize < 1 ? Pointer.NULL : new Memory(dataSize + 2));
 	}
 
 	/**
-	 * Creates a {@link WStringByReference} containing {@code value} allocated
-	 * to {@code value}'s byte length using {@code wchar_t}.
+	 * Creates a {@link UTF16StringByReference} containing {@code value} allocated
+	 * to {@code value}'s byte length in {@code UTF-16}.
 	 *
 	 * @param value the string content.
 	 */
-	public WStringByReference(String value) {
+	public UTF16StringByReference(String value) {
 		super();
 		if (value != null) {
 			setValue(value);
@@ -56,39 +55,51 @@ public class WStringByReference extends PointerType {
 	}
 
 	/**
-	 * Sets this {@link WStringByReference}'s content to that of {@code value}.
-	 * If there's enough space in the already allocated memory, the content will
-	 * be written there. If not a new area will be allocated and the
-	 * {@link Pointer} updated.
+	 * Sets this {@link UTF16StringByReference}'s content to that of
+	 * {@code value}. If there's enough space in the already allocated memory,
+	 * the content will be written there. If not a new area will be allocated
+	 * and the {@link Pointer} updated.
 	 *
 	 * @param value the new string content.
 	 */
     public void setValue(String value) {
-    	int length = getNumberOfBytes(value);
-		if (length > getAllocatedSize()) {
-			setPointer(new Memory(length + Native.WCHAR_SIZE));
+		if (getNumberOfBytes(value) > getAllocatedSize()) {
+			setPointer(new Memory(getNumberOfBytes(value) + 2));
 		}
-        getPointer().setWideString(0, value);
+		int i;
+		for (i = 0; i < value.length(); i++) {
+			getPointer().setChar(i * 2, value.charAt(i));
+		}
+		getPointer().setMemory(i * 2L, 2L, (byte) 0);
     }
 
 	/**
-	 * Gets this {@link WStringByReference}'s content.
+	 * Gets this {@link UTF16StringByReference}'s content.
 	 *
 	 * @return The content as a {@link String}.
 	 */
     public String getValue() {
-        return getPointer() == null ? null : getPointer().getWideString(0);
+    	if (getPointer() == null) {
+    		return null;
+    	}
+    	int length;
+    	for (length = 0; getPointer().getChar(length) != 0; length += 2);
+    	char[] value = new char[length / 2];
+    	for (int i = 0; i < length; i += 2) {
+    		value[i / 2] = getPointer().getChar(i);
+    	}
+    	return String.valueOf(value);
     }
 
 	/**
-	 * Gets the size in bytes allocated to this {@link WStringByReference}
+	 * Gets the size in bytes allocated to this {@link UTF16StringByReference}
 	 * excluding byte for the {@code null} terminator.
 	 *
 	 * @return The allocated size in bytes.
 	 */
     public long getAllocatedSize() {
     	if (getPointer() instanceof Memory) {
-    		return Math.max(((Memory) getPointer()).size() - Native.WCHAR_SIZE, 0);
+    		return Math.max(((Memory) getPointer()).size() - 2, 0);
     	}
     	return 0;
     }
@@ -112,8 +123,7 @@ public class WStringByReference extends PointerType {
     }
 
 	/**
-	 * Calculates the length in bytes of {@code string} as a native
-	 * {@code wstring}.
+	 * Calculates the length in bytes of {@code string} as {@code UTF-16}.
 	 *
 	 * @param string the string to evaluate.
 	 * @return the byte-length of {@code string}.
@@ -122,14 +132,11 @@ public class WStringByReference extends PointerType {
     	if (string == null) {
     		return 0;
     	}
-    	if (Native.WCHAR_SIZE == 4) {
-    		return string.codePointCount(0, string.length()) * Native.WCHAR_SIZE;
-    	}
 		final int length = string.length();
 		int byteLength = 0;
 		for (int offset = 0; offset < length; ) {
 		   int codepoint = string.codePointAt(offset);
-		   byteLength += Character.charCount(codepoint) * Native.WCHAR_SIZE;
+		   byteLength += Character.charCount(codepoint) * 2;
 		   offset += Character.charCount(codepoint);
 		}
     	return byteLength;

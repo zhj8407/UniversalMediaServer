@@ -18,14 +18,16 @@
  */
 package net.pms.io.iokit;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import net.pms.util.jna.JnaIntEnum;
 import net.pms.util.jna.JnaEnumTypeMapper;
 import net.pms.util.jna.JnaLongEnum;
 import net.pms.util.jna.StringByReference;
-import net.pms.util.jna.WStringByReference;
+import net.pms.util.jna.UTF16StringByReference;
 import com.sun.jna.Library;
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
@@ -618,14 +620,13 @@ public interface CoreFoundation extends Library {
         }
 
         /**
-         * Creates a new CFString from the given Java string.
+         * Creates a new {@code CFString} from the given {@link String}.
          *
-         * @param s
-         *            A string
+         * @param string the source string.
          * @return A reference to a CFString representing s
          */
-        public static CFStringRef toCFString(String s) {
-            final char[] chars = s.toCharArray();
+        public static CFStringRef toCFString(String string) {
+            final char[] chars = string.toCharArray();
             int length = chars.length;
             return INSTANCE.CFStringCreateWithCharacters(null, chars, length);
         }
@@ -643,7 +644,7 @@ public interface CoreFoundation extends Library {
 			);
 			StringByReference buffer = new StringByReference(maxSize);
 			INSTANCE.CFStringGetCString(this, buffer, maxSize, CFStringBuiltInEncodings.kCFStringEncodingUTF8.getValue());
-			return buffer.getValue();
+			return buffer.getValue(StandardCharsets.UTF_8);
 		}
 
 		/**
@@ -679,6 +680,13 @@ public interface CoreFoundation extends Library {
 
 	/**
 	 * Creates an immutable string from a C string.
+	 * <p>
+	 * <b>Implicit encoding of {@code cStr} with
+	 * {@link Native#getDefaultStringEncoding} is done by JNA when
+	 * {@link String} is used as an argument</b>. To end up with a correctly
+	 * encoded {@code CFString}, {@code encoding} must correspond to
+	 * {@link Native#getDefaultStringEncoding}. Use
+	 * {@link CFStringRef#toCFString(String)} to avoid encoding problems.
 	 * <p>
 	 * References are owned if created by functions including "Create" or "Copy"
 	 * and must be released with {@link #CFRelease} to avoid leaking references.
@@ -890,7 +898,7 @@ public interface CoreFoundation extends Library {
 	 *            {@code CFString}.
 	 * @return A {@code Unicode} character.
 	 */
-    char CFStringGetCharacterAtIndex(CFStringRef theString, int idx);
+    char CFStringGetCharacterAtIndex(CFStringRef theString, long idx);
 
 	/**
 	 * Copies the character contents of a {@code CFString} to a local C string
@@ -972,7 +980,7 @@ public interface CoreFoundation extends Library {
 	 *         {@code null} if the internal storage of {@code theString} does
 	 *         not allow this to be returned efficiently.
 	 */
-    WStringByReference CFStringGetCharactersPtr(CFStringRef theString);
+    UTF16StringByReference CFStringGetCharactersPtr(CFStringRef theString);
 
 	/**
 	 * Returns the smallest encoding on the current system for the character
@@ -1109,7 +1117,7 @@ public interface CoreFoundation extends Library {
 	 *         "https://developer.apple.com/library/content/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-103029"
 	 *         >The Create Rule</a>.
 	 */
-    CFStringRef CFStringCreateWithFileSystemRepresentation(CFAllocatorRef alloc, char[] buffer);
+    CFStringRef CFStringCreateWithFileSystemRepresentation(CFAllocatorRef alloc, StringByReference buffer);
 
 	/**
 	 * Compares one {@code CFString} with another {@code CFString}.
@@ -1128,7 +1136,7 @@ public interface CoreFoundation extends Library {
 	 * @return A {@link CFComparisonResult} value that indicates whether {@code theString1} is
 	 *         equal to, less than, or greater than {@code theString2}.
 	 */
-    CFComparisonResult CFStringCompare(CFStringRef theString1, CFStringRef theString2, int compareOptions);
+    CFComparisonResult CFStringCompare(CFStringRef theString1, CFStringRef theString2, long compareOptions);
 
 	/**
 	 * Determines whether a given Core Foundation string encoding is available
@@ -1155,7 +1163,7 @@ public interface CoreFoundation extends Library {
 	 *         -terminated list of enum constants, each of type
 	 *         {@code CFStringEncoding}.
 	 */
-    int[] CFStringGetListOfAvailableEncodings();
+    Pointer CFStringGetListOfAvailableEncodings();
 
 	/**
 	 * Returns the canonical name of a specified string encoding.
