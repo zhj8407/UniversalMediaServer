@@ -35,6 +35,9 @@ public class WStringByReference extends PointerType {
 	}
 
 	/**
+	 * Creates a {@link WStringByReference} and allocates space for {
+	 * {@code dataSize} plus the size of the {@code null} terminator.
+	 *
 	 * @param dataSize the size to allocate in bytes excluding the {@code null}
 	 *            terminator.
 	 */

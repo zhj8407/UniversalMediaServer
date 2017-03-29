@@ -1,25 +1,30 @@
 package net.pms;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
-
 import com.sun.jna.Native;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.DoubleByReference;
 import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.ptr.PointerByReference;
 import net.pms.io.iokit.CoreFoundation;
 import net.pms.io.iokit.CoreFoundation.CFComparisonResult;
 import net.pms.io.iokit.CoreFoundation.CFDictionaryRef;
+import net.pms.io.iokit.CoreFoundation.CFMutableDictionaryRef;
 import net.pms.io.iokit.CoreFoundation.CFMutableStringRef;
 import net.pms.io.iokit.CoreFoundation.CFNumberRef;
 import net.pms.io.iokit.CoreFoundation.CFNumberType;
 import net.pms.io.iokit.CoreFoundation.CFStringBuiltInEncodings;
 import net.pms.io.iokit.CoreFoundation.CFStringCompareFlags;
 import net.pms.io.iokit.CoreFoundation.CFStringRef;
+import net.pms.io.iokit.CoreFoundation.CFTypeRef;
 import net.pms.io.iokit.IOKit;
 import net.pms.io.iokit.IOReturn;
+import net.pms.util.jna.PointerArrayByReference;
 import net.pms.util.jna.StringByReference;
+import net.pms.util.jna.TerminatedStringEncodingArray;
 import net.pms.util.jna.UTF16StringByReference;
 import net.pms.util.jna.WStringByReference;
 
@@ -32,14 +37,14 @@ public class Test2 {
 		//System.out.print(FileManager.INSTANCE.FSPathMakeRef("", 0, new ByteByReference((byte) 1)));
 		Native.setProtected(true);
 		CoreFoundation coreFoundation = CoreFoundation.INSTANCE;
-		/*IntByReference assertionID = new IntByReference();
+		IntByReference assertionID = new IntByReference();
 		CFStringRef assertionType = CFStringRef.toCFString(IOKit.kIOPMAssertPreventUserIdleSystemSleep);
 		CFStringRef name = CFStringRef.toCFString("TestName");
-		/*int ioResult = IOKit.INSTANCE.IOPMAssertionCreateWithName(assertionType, IOKit.kIOPMAssertionLevelOn, name, assertionID);
-		System.out.println(ioResult);
-		System.out.println(Integer.toHexString(ioResult));
-		System.out.println(assertionID.getValue());*/
-		/*CFStringRef details = CFStringRef.toCFString("Testing out IOKit");
+		IOReturn ioReturn = IOKit.INSTANCE.IOPMAssertionCreateWithName(assertionType, IOKit.kIOPMAssertionLevelOn, name, assertionID);
+		System.out.println(ioReturn);
+		System.out.println(Integer.toHexString(ioReturn.getValue()));
+		System.out.println(assertionID.getValue());
+		CFStringRef details = CFStringRef.toCFString("Testing out IOKit");
 		CFStringRef timeOutAction = CFStringRef.toCFString(IOKit.kIOPMAssertionTimeoutActionTurnOff);
 		IOReturn ioResult = IOKit.INSTANCE.IOPMAssertionCreateWithDescription(assertionType, name, details, null, null, 10d, timeOutAction, assertionID);
 		System.out.println(ioResult);
@@ -50,7 +55,17 @@ public class Test2 {
 		CFStringRef key = CFStringRef.toCFString(IOKit.kIOPMAssertionTimeoutActionKey);
 		CFStringRef value = CFStringRef.toCFStringRef(coreFoundation.CFDictionaryGetValue(dict, key));
 		System.out.println(value);
-		CFNumberRef i = CFNumberRef.toCFNumber(43.8f);
+		CFMutableDictionaryRef mutableDict = coreFoundation.CFDictionaryCreateMutableCopy(null, 0, dict);
+		CFMutableDictionaryRef emptyMutableDict = coreFoundation.CFDictionaryCreateMutable(null, 20, null, null);
+		CFNumberRef someInt = CFNumberRef.toCFNumber(5);
+		CFStringRef someText = CFStringRef.toCFString("My added string");
+		coreFoundation.CFDictionaryAddValue(mutableDict, someInt, someText);
+		long dictSize = coreFoundation.CFDictionaryGetCount(mutableDict);
+		PointerArrayByReference keys = new PointerArrayByReference(dictSize);
+		PointerArrayByReference values = new PointerArrayByReference(dictSize);
+		coreFoundation.CFDictionaryGetKeysAndValues(mutableDict, keys, values);
+
+		/*CFNumberRef i = CFNumberRef.toCFNumber(43.8f);
 		System.out.println(i);
 		coreFoundation.CFRelease(i);*/
 		coreFoundation.CFNullGetTypeID();
@@ -86,9 +101,12 @@ public class Test2 {
 		CFStringRef cfString4 = coreFoundation.CFStringCreateWithFileSystemRepresentation(null, refString);
 		CFComparisonResult cRes = coreFoundation.CFStringCompare(cfString4, cfString, CFStringCompareFlags.kCFCompareCaseInsensitive.getValue());
 		coreFoundation.CFStringIsEncodingAvailable(CFStringBuiltInEncodings.kCFStringEncodingNonLossyASCII.getValue());
-		Pointer p = coreFoundation.CFStringGetListOfAvailableEncodings();
-		//List<Integer> intList = coreFoundation.CFStringGetListOfAvailableEncodings();
-		
+		TerminatedStringEncodingArray encoding = coreFoundation.CFStringGetListOfAvailableEncodings();
+		encoding.size();
+		encoding = new TerminatedStringEncodingArray(Arrays.asList(new Integer[]{Integer.valueOf(5), Integer.valueOf(-3), Integer.valueOf(9), Integer.valueOf(100)}));
+		encoding.size();
+		encoding = new TerminatedStringEncodingArray();
+		encoding.size();
 	}
 
 }

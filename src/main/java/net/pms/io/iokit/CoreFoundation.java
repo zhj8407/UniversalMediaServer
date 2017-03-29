@@ -21,12 +21,13 @@ package net.pms.io.iokit;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import net.pms.util.jna.JnaIntEnum;
 import net.pms.util.jna.JnaEnumTypeMapper;
 import net.pms.util.jna.JnaLongEnum;
+import net.pms.util.jna.PointerArrayByReference;
 import net.pms.util.jna.StringByReference;
+import net.pms.util.jna.TerminatedStringEncodingArray;
 import net.pms.util.jna.UTF16StringByReference;
 import com.sun.jna.Library;
 import com.sun.jna.Memory;
@@ -1158,12 +1159,11 @@ public interface CoreFoundation extends Library {
 	 *
 	 * @see CFStringBuiltInEncodings
 	 *
-	 * @return A pointer to a
-	 *         {@link CFStringBuiltInEncodings#kCFStringEncodingInvalidId}
-	 *         -terminated list of enum constants, each of type
-	 *         {@code CFStringEncoding}.
+	 * @return A {@link TerminatedStringEncodingArray} containing all the
+	 *         available {@code CFStringEncoding}s. The referenced memory
+	 *         is owned by the system and doesn't have to be deallocated.
 	 */
-    Pointer CFStringGetListOfAvailableEncodings();
+    TerminatedStringEncodingArray CFStringGetListOfAvailableEncodings();
 
 	/**
 	 * Returns the canonical name of a specified string encoding.
@@ -1612,7 +1612,11 @@ public interface CoreFoundation extends Library {
 	 *            {@link #CFDictionaryGetCount} pointers, or
 	 *            {@code null}, the behavior is undefined.
 	 */
-    void CFDictionaryGetKeysAndValues(CFDictionaryRef theDict, CFTypeRef keys, CFTypeRef values);
+    void CFDictionaryGetKeysAndValues(
+    	CFDictionaryRef theDict,
+    	PointerArrayByReference keys,
+    	PointerArrayByReference values
+    );
 
 	/**
 	 * Adds the key-value pair to the dictionary if no such key already exists.
