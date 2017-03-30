@@ -525,22 +525,16 @@ public class DLNAMediaAudio extends DLNAMediaLang implements Cloneable {
 			result.append(", ");
 		}
 		result.append("Audio Codec: ").append(getAudioCodec());
-		if (getSampleFrequency() != null) {
-			result.append(", Sample Frequency: ").append(getSampleFrequency());
-		}
-		if (getBitRate() != 0) {
-			result.append(", Bitrate: ").append(getBitRate());
-		}
-		if (getBitsperSample() != 0 && getBitsperSample() != 16 ) {
+		result.append(", Sample Frequency: ").append(getSampleFrequency());
+		result.append(", Bitrate: ").append(getBitRate());
+		if (getBitsperSample() != 16 ) {
 			result.append(", Bits per Sample: ").append(getBitsperSample());
 		}
 
-		if (getAudioProperties() != null) {
-			result.append(", ").append(getAudioProperties());
-		}
-		if (nrAudioChannels != 0) {
-			result.append(", Deprecated Channels: ").append(nrAudioChannels);
-		}
+//		if (getAudioProperties() != null) {
+//			result.append(", ").append(getAudioProperties());
+//		}
+		result.append(", Deprecated Channels: ").append(nrAudioChannels);
 		if (delay != 0) {
 			result.append(", Deprecated Delay: ").append(delay);
 		}
