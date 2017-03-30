@@ -1652,14 +1652,10 @@ public class DLNAMediaInfo implements Cloneable {
 		result.append("Container: ").append(getContainer());
 		result.append(", Size: ").append(getSize());
 		if (isVideo()) {
-			if (getBitrate() != 0) {
-				result.append(", Video Bitrate: ").append(getBitrate());
-			}
+			result.append(", Video Bitrate: ").append(getBitrate());
 			result.append(", Video Tracks: ").append(getVideoTrackCount());
 			result.append(", Video Codec: ").append(getCodecV());
-			if (getDuration() != 0) {
-				result.append(", Duration: ").append(getDurationString());
-			}
+			result.append(", Duration: ").append(getDurationString());
 			result.append(", Video Resolution: ").append(getWidth()).append(" x ").append(getHeight());
 			if (isNotBlank(getFrameRate())) {
 				result.append(", Frame Rate: ").append(getFrameRate());
@@ -1708,12 +1704,8 @@ public class DLNAMediaInfo implements Cloneable {
 			}
 
 		} else if (getAudioTrackCount() > 0) {
-			if (getBitrate() != 0) {
-				result.append(", Bitrate: ").append(getBitrate());
-			}
-			if (getDuration() != 0) {
-				result.append(", Duration: ").append(getDurationString());
-			}
+			result.append(", Bitrate: ").append(getBitrate());
+			result.append(", Duration: ").append(getDurationString());
 			appendAudioTracks(result);
 		}
 		if (getImageCount() > 0) {
